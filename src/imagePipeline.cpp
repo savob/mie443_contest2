@@ -11,14 +11,12 @@ ImagePipeline::ImagePipeline(ros::NodeHandle& n) {
 
 void ImagePipeline::imageCallback(const sensor_msgs::ImageConstPtr& msg) {
     try {
-        if(isValid) {
-            img.release();
-        }
+        if(isValid) img.release();
+
         img = (cv_bridge::toCvShare(msg, IMAGE_TYPE)->image).clone();
         isValid = true;
     } catch (cv_bridge::Exception& e) {
-        std::cout << "ERROR: Could not convert from " << msg->encoding.c_str()
-                  << " to " << IMAGE_TYPE.c_str() << "!" << std::endl;
+        ROS_ERROR("Could not convert from %s to %s!", msg->encoding.c_str(),  IMAGE_TYPE.c_str());
         isValid = false;
     }    
 }
@@ -26,27 +24,28 @@ void ImagePipeline::imageCallback(const sensor_msgs::ImageConstPtr& msg) {
 int ImagePipeline::getTemplateID(Boxes& boxes) {
     int template_id = -1;
 
-    isValid = true; // REMOVE LATER
-
     if(!isValid) {
-        std::cout << "ERROR: INVALID IMAGE!" << std::endl;
+        ROS_ERROR("INVALID IMAGE!");
     } else if(img.empty() || img.rows <= 0 || img.cols <= 0) {
-        std::cout << "ERROR: VALID IMAGE, BUT STILL A PROBLEM EXISTS!" << std::endl;
-        std::cout << "img.empty():" << img.empty() << std::endl;
-        std::cout << "img.rows:" << img.rows << std::endl;
-        std::cout << "img.cols:" << img.cols << std::endl;
+        ROS_ERROR("VALID IMAGE, BUT STILL A PROBLEM EXISTS!");
+        std::cout << "\timg.empty():" << img.empty() << std::endl;
+        std::cout << "\timg.rows:" << img.rows << std::endl;
+        std::cout << "\timg.cols:" << img.cols << std::endl;
     } else {
         /***YOUR CODE HERE***/
         
         // Use: boxes.templates
-        cv::imshow("view", img);
-        cv::waitKey(0);
+        cv::imshow("Processed view. Press any key to continue.", img);
+        cv::waitKey(0); // Wait until key pressed
     }  
     return template_id;
 }
 
 void ImagePipeline::loadImage(char* fileLocation) {
+
     img = cv::imread(fileLocation, 1);
+    isValid = true;
+
     cv::imshow("Loaded image", img);
     cv::waitKey(10);
 }
