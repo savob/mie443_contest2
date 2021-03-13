@@ -36,7 +36,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
         
         // Use: boxes.templates
         cv::imshow("Processed view. Press any key to continue.", img);
-        cv::waitKey(0); // Wait until key pressed
+        cv::waitKey(10); // Wait until key pressed
     }  
     return template_id;
 }
