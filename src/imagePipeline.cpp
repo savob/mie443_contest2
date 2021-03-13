@@ -25,6 +25,9 @@ void ImagePipeline::imageCallback(const sensor_msgs::ImageConstPtr& msg) {
 
 int ImagePipeline::getTemplateID(Boxes& boxes) {
     int template_id = -1;
+
+    isValid = true; // REMOVE LATER
+
     if(!isValid) {
         std::cout << "ERROR: INVALID IMAGE!" << std::endl;
     } else if(img.empty() || img.rows <= 0 || img.cols <= 0) {
@@ -34,9 +37,16 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
         std::cout << "img.cols:" << img.cols << std::endl;
     } else {
         /***YOUR CODE HERE***/
+        
         // Use: boxes.templates
         cv::imshow("view", img);
-        cv::waitKey(10);
+        cv::waitKey(0);
     }  
     return template_id;
+}
+
+void ImagePipeline::loadImage(char* fileLocation) {
+    img = cv::imread(fileLocation, 1);
+    cv::imshow("Loaded image", img);
+    cv::waitKey(10);
 }

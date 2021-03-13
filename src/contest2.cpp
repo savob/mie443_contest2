@@ -13,14 +13,18 @@ int main(int argc, char** argv) {
     // Initialize box coordinates and templates
     Boxes boxes; 
     if(!boxes.load_coords() || !boxes.load_templates()) {
-        std::cout << "ERROR: could not load coords or templates" << std::endl;
+        ROS_FATAL("Could not load coords or templates");
         return -1;
     }
-    for(int i = 0; i < boxes.coords.size(); ++i) {
-        std::cout << "Box coordinates: " << std::endl;
-        std::cout << i << " x: " << boxes.coords[i][0] << " y: " << boxes.coords[i][1] << " z: " 
-                  << boxes.coords[i][2] << std::endl;
+    else {
+        ROS_INFO("Box coordinates:");
+
+        for(int i = 0; i < boxes.coords.size(); ++i) {
+            std::cout << i << "\tx: " << boxes.coords[i][0] << " y: " << boxes.coords[i][1] << " z: " 
+                    << boxes.coords[i][2] << std::endl;
+        }
     }
+
     // Initialize image objectand subscriber.
     ImagePipeline imagePipeline(n);
     // Execute strategy.
@@ -29,8 +33,18 @@ int main(int argc, char** argv) {
         /***YOUR CODE HERE***/
         // Use: boxes.coords
         // Use: robotPose.x, robotPose.y, robotPose.phi
+
+
+        // Vision stuff past here, no touchy
+
+        // Location of test file
+        char testFile[] = "/home/brobot/catkin_ws/src/mie443_contest2/testpics/crab5.png";
+        imagePipeline.loadImage(testFile);
         imagePipeline.getTemplateID(boxes);
-        ros::Duration(0.01).sleep();
+
+        // End of vision stuff
+
+        ros::Duration(2).sleep(); // Two second sleep per step
     }
     return 0;
 }

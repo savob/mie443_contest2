@@ -16,4 +16,5 @@ class ImagePipeline {
         ImagePipeline(ros::NodeHandle& n);
         void imageCallback(const sensor_msgs::ImageConstPtr& msg);
         int getTemplateID(Boxes& boxes);
+        void loadImage(char* fileLocation); // Used for testing by loading in our own images
 };
