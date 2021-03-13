@@ -38,10 +38,9 @@ int main(int argc, char** argv) {
         // Vision stuff past here, no touchy
 
         // Location of test file (needs to be absolute)
-        //char testFile[] = "/home/brobot/catkin_ws/src/mie443_contest2/testpics/crab5.png";
-        //imagePipeline.loadImage(testFile);
-        
-        //imagePipeline.getTemplateID(boxes);
+        char testFile[] = "/home/brobot/catkin_ws/src/mie443_contest2/testpics/crab5.png";
+        imagePipeline.loadImage(testFile);
+        imagePipeline.getTemplateID(boxes);
 
         // End of vision stuff
 
