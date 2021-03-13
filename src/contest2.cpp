@@ -17,10 +17,10 @@ int main(int argc, char** argv) {
         return -1;
     }
     else {
-        ROS_INFO("Box coordinates:");
+        ROS_INFO("Box coordinates loaded successfully:");
 
         for(int i = 0; i < boxes.coords.size(); ++i) {
-            std::cout << i << "\tx: " << boxes.coords[i][0] << " y: " << boxes.coords[i][1] << " z: " 
+            std::cout << i << "\tx: " << boxes.coords[i][0] << "\ty: " << boxes.coords[i][1] << "\tz: " 
                     << boxes.coords[i][2] << std::endl;
         }
     }
@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
 
         // End of vision stuff
 
-        ros::Duration(0.01).sleep(); // Two second sleep per step
+        ros::Duration(1).sleep(); // Two second sleep per step
     }
     return 0;
 }
