@@ -28,6 +28,17 @@ int main(int argc, char** argv) {
     // Initialize image objectand subscriber.
     ImagePipeline imagePipeline(n);
     // Execute strategy.
+    float adjMatrix[boxes.coords.size() + 1][boxes.coords.size() +1];
+    
+    for(int i = 0; i < boxes.coords.size() + 1; ++i) {
+        for(int j = 0, j , boxes.coords.size() + 1; ++i) {
+            if(i == j){
+                adjMatrix[i][j] = 0;
+            }
+            else if(i == 0) {
+                adjMatrix[i][j] = sqrt()
+            }
+
     while(ros::ok()) {
         ros::spinOnce();
         /***YOUR CODE HERE***/
