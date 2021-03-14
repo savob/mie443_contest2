@@ -2,6 +2,7 @@
 #include <navigation.h>
 #include <robot_pose.h>
 #include <imagePipeline.h>
+#include <cmath>
 
 int main(int argc, char** argv) {
     // Setup ROS.
@@ -28,7 +29,7 @@ int main(int argc, char** argv) {
     // Initialize image objectand subscriber.
     ImagePipeline imagePipeline(n);
     // Execute strategy.
-    float adjMatrix[boxes.coords.size() + 1][boxes.coords.size() +1];
+    double adjMatrix[boxes.coords.size() + 1][boxes.coords.size() +1];
     
     for(int i = 0; i < boxes.coords.size() + 1; ++i) {
         for(int j = 0, j , boxes.coords.size() + 1; ++i) {
@@ -36,8 +37,22 @@ int main(int argc, char** argv) {
                 adjMatrix[i][j] = 0;
             }
             else if(i == 0) {
-                adjMatrix[i][j] = sqrt()
+                double dx = robotPose.x - boxes.coords[j][0];
+                double dy = robotPose.y - boxes.coords[j][1];
+                adjMatrix[i][j] = sqrt(dx * dx + dy * dy);
             }
+            else if(j == 0) {
+                double dx = robotPose.x - boxes.coords[i][0];
+                double dy = robotPose.y - boxes.coords[i][1];
+                adjMatrix[i][j] = sqrt(dx * dx + dy * dy);
+            }
+            else {
+                double dx = boxes.coords[i][0] - boxes.coords[j][0];
+                double dy = boxes.coords[i][1] - boxes.coords[j][1];
+                adjMatrix[i][j] = sqrt(dx * dx + dy * dy);
+            }
+        }
+    }
 
     while(ros::ok()) {
         ros::spinOnce();
