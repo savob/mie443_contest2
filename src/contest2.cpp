@@ -5,6 +5,15 @@
 #include <cmath>
 #include <algorithm>
 
+double loopCost(int movePlan, double adjMatrix) {
+        double cost = 0;
+        for(int i = 1; i < movePlan.size(); ++i) {
+            cost += adjMatrix[movePlan[i]][moveplan[i-1]];
+        }
+        cost += adjMatrix[movePlan.end()][movePlan.begin()];
+        return cost;
+    }
+
 int main(int argc, char** argv) {
     // Setup ROS.
     ros::init(argc, argv, "contest2");
@@ -60,15 +69,6 @@ int main(int argc, char** argv) {
     int movePlan[boxes.coords.size() + 1];
     for(int i = 0; i < boxes.coords.size() + 1; ++i) {
         movePlan[i] = i;
-    }
-
-    double loopCost(int movePlan, double adjMatrix) {
-        double cost = 0;
-        for(int i = 1; i < movePlan.size(); ++i) {
-            cost += adjMatrix[movePlan[i]][moveplan[i-1]];
-        }
-        cost += adjMatrix[movePlan.end()][movePlan.begin()];
-        return cost;
     }
 
     double bestScore = loopCost(movePlan, adjMatrix);
