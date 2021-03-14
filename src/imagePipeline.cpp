@@ -52,9 +52,9 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
             // Check if its greyscale (R=B=G), blank them if they aren't
             if ((bgrPixel[0] == bgrPixel[1]) && (bgrPixel[0] == bgrPixel[2])) continue;
             else {
-                pixelPtr[i*img.cols*cn + j*cn + 0] = 0;
-                pixelPtr[i*img.cols*cn + j*cn + 1] = 0;
-                pixelPtr[i*img.cols*cn + j*cn + 2] = 0;
+                pixelPtr[i*img.cols*cn + j*cn + 0] = removeVal;
+                pixelPtr[i*img.cols*cn + j*cn + 1] = removeVal;
+                pixelPtr[i*img.cols*cn + j*cn + 2] = removeVal;
             } 
         }
     }
@@ -70,15 +70,17 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
             // Check if its greyscale (R=B=G), blank them if they aren't
             if (pixelPtr[i*img.cols*cn + j*cn + 0] != skyVal) break; // Hit an object, go to next column
             else {
-                pixelPtr[i*img.cols*cn + j*cn + 0] = 0;
-                pixelPtr[i*img.cols*cn + j*cn + 1] = 0;
-                pixelPtr[i*img.cols*cn + j*cn + 2] = 0;
+                pixelPtr[i*img.cols*cn + j*cn + 0] = removeVal;
+                pixelPtr[i*img.cols*cn + j*cn + 1] = removeVal;
+                pixelPtr[i*img.cols*cn + j*cn + 2] = removeVal;
             } 
         }
     }
 
     // Convert image from RGB to greyscale space
-    cv::cvtColor(img, img, cv::COLOR_RGBA2GRAY, 0); 
+    cv::cvtColor(img, img, cv::COLOR_RGBA2GRAY, 0);
+
+    
 
     // Use: boxes.templates
     cv::imshow("Processed view. Press any key to continue.", img);
