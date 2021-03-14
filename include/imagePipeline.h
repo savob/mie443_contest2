@@ -17,6 +17,8 @@ class ImagePipeline {
         cv::Mat img;
         bool isValid;
         image_transport::Subscriber sub;
+
+        uint8_t skyVal = 178; // RGB value of the skybox
         const uint8_t removeVal = 0; // Value used to overwrite pixels we don't care for
     public:
         ImagePipeline(ros::NodeHandle& n);

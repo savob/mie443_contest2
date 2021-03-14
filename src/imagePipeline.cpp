@@ -60,9 +60,11 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
     }
 
     // Remove sky
-    // The sky is a uniform colour (178, 178, 178) and always starts from the top until it is
+    // The sky is a uniform colour (in our sim 178, 178, 178) and always starts from the top until it is
     // interrupted by an object, none of which have pixels of that value along the top
-    const uint8_t skyVal = 178; // RGB value of the skybox
+
+    // skyVal is defined in the header, but it can be dynamically set before this is desired.
+    
     for (int j = 0; j < img.cols; j++) {
         for (int i = 0; i < img.rows; i++) {
             // Go column by column from top to bottom until no longer in the sky
