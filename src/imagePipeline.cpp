@@ -43,10 +43,8 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
     int cn = img.channels();
     uint8_t bgrPixel[3];
 
-    for(int i = 0; i < img.rows; i++)
-    {
-        for(int j = 0; j < img.cols; j++)
-        {
+    for(int i = 0; i < img.rows; i++) {
+        for(int j = 0; j < img.cols; j++) {
             bgrPixel[0] = pixelPtr[i*img.cols*cn + j*cn + 0]; // B
             bgrPixel[1] = pixelPtr[i*img.cols*cn + j*cn + 1]; // G
             bgrPixel[2] = pixelPtr[i*img.cols*cn + j*cn + 2]; // R
@@ -61,7 +59,27 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
         }
     }
 
-        
+    // Remove sky
+    // The sky is a uniform colour (178, 178, 178) and always starts from the top until it is
+    // interrupted by an object, none of which have pixels of that value along the top
+    const uint8_t skyVal = 178; // RGB value of the skybox
+    for (int j = 0; j < img.cols; j++) {
+        for (int i = 0; i < img.rows; i++) {
+            // Go column by column from top to bottom until no longer in the sky
+
+            // Check if its greyscale (R=B=G), blank them if they aren't
+            if (pixelPtr[i*img.cols*cn + j*cn + 0] != skyVal) break; // Hit an object, go to next column
+            else {
+                pixelPtr[i*img.cols*cn + j*cn + 0] = 0;
+                pixelPtr[i*img.cols*cn + j*cn + 1] = 0;
+                pixelPtr[i*img.cols*cn + j*cn + 2] = 0;
+            } 
+        }
+    }
+
+    // Convert image from RGB to greyscale space
+    cv::cvtColor(img, img, cv::COLOR_RGBA2GRAY, 0); 
+
     // Use: boxes.templates
     cv::imshow("Processed view. Press any key to continue.", img);
     cv::waitKey(0); // Wait until key pressed
