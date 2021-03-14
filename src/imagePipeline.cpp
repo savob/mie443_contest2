@@ -26,23 +26,51 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
 
     if(!isValid) {
         ROS_ERROR("INVALID IMAGE!");
+        return template_id;
     } else if(img.empty() || img.rows <= 0 || img.cols <= 0) {
         ROS_ERROR("VALID IMAGE, BUT STILL A PROBLEM EXISTS!");
         std::cout << "\timg.empty():" << img.empty() << std::endl;
         std::cout << "\timg.rows:" << img.rows << std::endl;
         std::cout << "\timg.cols:" << img.cols << std::endl;
-    } else {
-        /***YOUR CODE HERE***/
+        return template_id;
+    }
+
+    // Preprocesing
+    img = img(cv::Rect(0,0,640,420)); // Crop out the constant lip of the rover at the bottom
+
+    // Black out coloured pixels (currently only walls)
+    uint8_t* pixelPtr = (uint8_t*)img.data;
+    int cn = img.channels();
+    uint8_t bgrPixel[3];
+
+    for(int i = 0; i < img.rows; i++)
+    {
+        for(int j = 0; j < img.cols; j++)
+        {
+            bgrPixel[0] = pixelPtr[i*img.cols*cn + j*cn + 0]; // B
+            bgrPixel[1] = pixelPtr[i*img.cols*cn + j*cn + 1]; // G
+            bgrPixel[2] = pixelPtr[i*img.cols*cn + j*cn + 2]; // R
+
+            // Check if its greyscale (R=B=G), blank them if they aren't
+            if ((bgrPixel[0] == bgrPixel[1]) && (bgrPixel[0] == bgrPixel[2])) continue;
+            else {
+                pixelPtr[i*img.cols*cn + j*cn + 0] = 0;
+                pixelPtr[i*img.cols*cn + j*cn + 1] = 0;
+                pixelPtr[i*img.cols*cn + j*cn + 2] = 0;
+            } 
+        }
+    }
+
         
-        // Use: boxes.templates
-        cv::imshow("Processed view. Press any key to continue.", img);
-        cv::waitKey(0); // Wait until key pressed
-    }  
+    // Use: boxes.templates
+    cv::imshow("Processed view. Press any key to continue.", img);
+    cv::waitKey(0); // Wait until key pressed
+  
     return template_id;
 }
 
 void ImagePipeline::loadImage(char* fileLocation) {
-
+    // Replace image in pipeline with something else
     img = cv::imread(fileLocation, 1);
     isValid = true;
 
