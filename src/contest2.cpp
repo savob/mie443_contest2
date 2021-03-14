@@ -5,7 +5,9 @@
 #include <cmath>
 #include <algorithm>
 
-double loopCost(int movePlan, double adjMatrix) {
+
+
+double loopCost(int movePlan[], double adjMatrix[]) {
         double cost = 0;
         for(int i = 1; i < movePlan.size(); ++i) {
             cost += adjMatrix[movePlan[i]][moveplan[i-1]];
@@ -41,10 +43,11 @@ int main(int argc, char** argv) {
     // Execute strategy.
 
     // Create an adjacency matrix
-    double adjMatrix[boxes.coords.size() + 1][boxes.coords.size() +1];
+    int tour_points = boxes.coords.size() + 1;
+    double adjMatrix[tour_points][tour_points];
     
-    for(int i = 0; i < boxes.coords.size() + 1; ++i) {
-        for(int j = 0, j , boxes.coords.size() + 1; ++j) {
+    for(int i = 0; i < tour_points; ++i) {
+        for(int j = 0; j < tour_points; ++j) {
             if(i == j){
                 adjMatrix[i][j] = 0;
             }
@@ -66,8 +69,8 @@ int main(int argc, char** argv) {
         }
     }
 
-    int movePlan[boxes.coords.size() + 1];
-    for(int i = 0; i < boxes.coords.size() + 1; ++i) {
+    int movePlan[tour_points];
+    for(int i = 0; i < tour_points; ++i) {
         movePlan[i] = i;
     }
 
