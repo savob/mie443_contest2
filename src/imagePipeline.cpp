@@ -21,7 +21,7 @@ void ImagePipeline::imageCallback(const sensor_msgs::ImageConstPtr& msg) {
     }    
 }
 
-int ImagePipeline::getTemplateID(Boxes& boxes) {
+int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
     int template_id = -1;
 
     if(!isValid) {
@@ -108,10 +108,10 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
 
         Mat imgOfMatches = ImagePipeline::drawSceneMatches(img, tagImage, good_matches, keypoints_object, keypoints_scene);
         
-        imshow("Good Matches & Object detection", imgOfMatches);
+        if (showInternals) imshow("Good Matches & Object detection", imgOfMatches);
 
         confidence[tagID] = (float)good_matches.size() / (float)keypoints_scene.size();
-        printf("Template %2d - Confidence %5.2f%%\n", tagID, confidence[tagID] * 100.0);
+        if (showInternals) printf("Template %2d - Confidence %5.2f%%\n", tagID, confidence[tagID] * 100.0);
         
         cv::waitKey(250); // Wait until key pressed
     }
@@ -138,7 +138,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
     
     // See if it is worth making a conclusion
     if ((maxConfidence > reqConfMinimum) && ((maxConfidence / secondConfidence) > reqConfRatio)) {
-        ROS_INFO("Image contains %d, %.2f%% (%.2f) confidence", maxIndex,
+        ROS_DEBUG("Image contains %d, %.2f%% (%.2f) confidence", maxIndex,
             maxConfidence * 100.0, (maxConfidence / secondConfidence));
         template_id = maxIndex;
     }
