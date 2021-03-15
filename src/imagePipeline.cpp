@@ -93,13 +93,14 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
     std::vector<KeyPoint> keypoints_object, keypoints_scene;
     Mat descriptors_object, descriptors_scene;
 
+    float confidence[boxes.templates.size()];
     
     for (int tagID = 0; tagID < boxes.templates.size(); tagID++) {
         // File for current tag check
         Mat tagImage = boxes.templates[tagID];
         //cv::imshow("Tag checked", tagImage);
 
-        // Detect markers for the tag and the scene(img)
+        // Detect markers for the tag and the scene (img)
         detector->detectAndCompute( tagImage, noArray(), keypoints_object, descriptors_object );
         detector->detectAndCompute( img, noArray(), keypoints_scene, descriptors_scene );
 
@@ -121,11 +122,14 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
         
         imshow("Good Matches & Object detection", img_matches );
 
-        float confidence = (float)good_matches.size() / (float)keypoints_scene.size();
-        printf("Template %d - Confidence %.2f\n", tagID, confidence * 100.0);
+        confidence[tagID] = (float)good_matches.size() / (float)keypoints_scene.size();
+        printf("Template %d - Confidence %.2f\n", tagID, confidence[tagID] * 100.0);
         
         cv::waitKey(500); // Wait until key pressed
     }
+    
+
+
     return template_id;
 }
 
@@ -168,15 +172,16 @@ cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &refImage, std::
     cornersInReference[2] = Point2f( refImageCol, (float)refImage.rows );
     cornersInReference[3] = Point2f( 0, (float)refImage.rows );
     std::vector<Point2f> cornersInScene(4);
-    perspectiveTransform( cornersInReference, cornersInScene, H);
+    cv::perspectiveTransform( cornersInReference, cornersInScene, H);
+    
     //-- Draw lines between the corners (the mapped object in the scene - image_2 )
-    line( img_matches, cornersInScene[0] + Point2f(refImageCol, 0),
+    cv::line( img_matches, cornersInScene[0] + Point2f(refImageCol, 0),
             cornersInScene[1] + Point2f(refImageCol, 0), Scalar(0, 255, 0), 4 );
-    line( img_matches, cornersInScene[1] + Point2f(refImageCol, 0),
+    cv::line( img_matches, cornersInScene[1] + Point2f(refImageCol, 0),
             cornersInScene[2] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
-    line( img_matches, cornersInScene[2] + Point2f(refImageCol, 0),
+    cv::line( img_matches, cornersInScene[2] + Point2f(refImageCol, 0),
             cornersInScene[3] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
-    line( img_matches, cornersInScene[3] + Point2f(refImageCol, 0),
+    cv::line( img_matches, cornersInScene[3] + Point2f(refImageCol, 0),
             cornersInScene[0] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
     
     return img_matches;
