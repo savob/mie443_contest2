@@ -136,7 +136,17 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
             cornersInReference[2] = Point2f( refImageCol, (float)tagImage.rows );
             cornersInReference[3] = Point2f( 0, (float)tagImage.rows );
             std::vector<Point2f> cornersInScene(4);
-            cv::perspectiveTransform( cornersInReference, cornersInScene, H);
+
+            // Try to apply transform. If it fails, record a bad match
+            try {
+                cv::perspectiveTransform( cornersInReference, cornersInScene, H);
+            }
+            catch(const std::exception& e) {
+                ROS_WARN("Unable to transform perspective using reference %d", tagID + 1);
+                confidence[tagID] = 0;
+            }
+            
+            
 
             //for (int i = 0; i < 4; i++) printf("\tCorner %d - %.1f, %.1f\n", i, cornersInScene[i].x, cornersInScene[i].y);
 
@@ -150,6 +160,8 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
                 cornersInScene[2].x * (cornersInScene[3].y - cornersInScene[1].y);
             area = area / 2;
         }
+
+        if (area < reqMinArea) confidence[tagID] = 0; // Nulify confidence if it isn't present
 
         if (showInternals) {
             printf("Template %2d - Confidence %5.2f%% - KP %4d / %4d - Area %6.0f\n", 

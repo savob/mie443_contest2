@@ -33,8 +33,9 @@ class ImagePipeline {
     public:
         float reqConfRatio   = 1.20; // Ratio between max and second to make a conclusion
         float reqConfMinimum = 0.07; // Minimum threshold to be considered conclusive
+        float reqMinArea = 1000.0; // Minimum area needed to be considered
 
-        int minHessian = 400;
+        int minHessian = 350;
 
         ImagePipeline(ros::NodeHandle& n);
         void imageCallback(const sensor_msgs::ImageConstPtr& msg);
