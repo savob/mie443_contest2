@@ -88,7 +88,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
     //cv::imshow("Processed view. Press any key to continue.", img);
 
     //-- Step 1: Detect the keypoints using SURF Detector, compute the descriptors
-    int minHessian = 400;
+    int minHessian = 800;
     Ptr<SURF> detector = SURF::create( minHessian );
     std::vector<KeyPoint> keypoints_object, keypoints_scene;
     Mat descriptors_object, descriptors_scene;
@@ -151,7 +151,9 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
 
         imshow("Good Matches & Object detection", img_matches );
 
-        // Use: boxes.templates
+        float confidence = (float)good_matches.size() / (float)keypoints_object.size();
+
+        printf("Template %d - Confidence %.2f\n", tagID, confidence * 100.0);
         
         cv::waitKey(0); // Wait until key pressed
     }
