@@ -106,22 +106,16 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
 
         searchInScene(tagImage, descriptors_scene, keypoints_object, good_matches, detector);
 
-        Mat imgOfMatches = ImagePipeline::drawSceneMatches(img, tagImage, good_matches, keypoints_object, keypoints_scene);
-        
-        if (showInternals) 
-
         confidence[tagID] = (float)good_matches.size() / (float)keypoints_scene.size();
         
         if (showInternals) {
-            imshow("Good Matches & Object detection", imgOfMatches);
             printf("Template %2d - Confidence %5.2f%%\n", tagID, confidence[tagID] * 100.0);
-            cv::waitKey(250); // Wait until key pressed
         }
     }
     
     // Find the most the ID and confidence of the two highest rated candidates
     float maxConfidence = 0.0, secondConfidence = 0.0;
-    uint8_t maxIndex = 0, secondIndex = 0;
+    uint8_t maxID = 0, secondID = 0;
 
     for (uint8_t i = 0; i < boxes.templates.size(); i++) {
         float curConfidence = confidence[i];
@@ -130,20 +124,33 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
             secondConfidence = maxConfidence;
             maxConfidence = curConfidence;
 
-            secondIndex = maxIndex;
-            maxIndex = i;
+            secondID = maxID;
+            maxID = i;
         }
         else if (curConfidence > secondConfidence) {
             secondConfidence =  curConfidence;
-            secondIndex = i;
+            secondID = i;
         }
     }
     
     // See if it is worth making a conclusion
     if ((maxConfidence > reqConfMinimum) && ((maxConfidence / secondConfidence) > reqConfRatio)) {
-        ROS_DEBUG("Image contains %d, %.2f%% (%.2f) confidence", maxIndex,
-            maxConfidence * 100.0, (maxConfidence / secondConfidence));
-        template_id = maxIndex;
+        template_id = maxID;
+
+        if (showInternals) {
+            ROS_INFO("Image contains %d, %.2f%% (%.2f) confidence", maxID,
+                maxConfidence * 100.0, (maxConfidence / secondConfidence));
+
+            // Redo winning search
+            std::vector<DMatch> good_matches;
+            searchInScene(boxes.templates[maxID], descriptors_scene, keypoints_object, good_matches, detector);
+
+            // Show resulting matches
+            Mat imgOfMatches = ImagePipeline::drawSceneMatches(img, boxes.templates[maxID], good_matches, keypoints_object, keypoints_scene);
+            imshow("Selected match", imgOfMatches);
+
+            cv::waitKey(250); // Wait until key pressed
+        }
     }
 
 
