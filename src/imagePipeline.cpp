@@ -22,17 +22,17 @@ void ImagePipeline::imageCallback(const sensor_msgs::ImageConstPtr& msg) {
 }
 
 int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
-    int template_id = -1;
+    int determinedId = -1; // Default to error
 
     if(!isValid) {
         ROS_ERROR("INVALID IMAGE!");
-        return -1;
+        return determinedId;
     } else if(img.empty() || img.rows <= 0 || img.cols <= 0) {
         ROS_ERROR("VALID IMAGE, BUT STILL A PROBLEM EXISTS!");
         std::cout << "\timg.empty():" << img.empty() << std::endl;
         std::cout << "\timg.rows:" << img.rows << std::endl;
         std::cout << "\timg.cols:" << img.cols << std::endl;
-        return -1;
+        return determinedId;
     }
 
     // Preprocesing
@@ -153,7 +153,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
 
         if (showInternals) {
             printf("Template %2d - Confidence %5.2f%% - KP %4d / %4d - Area %6.0f\n", 
-                tagID, confidence[tagID] * 100.0, (int)goodMatches.size(), (int) keyPointsObject.size(), area);
+                tagID + 1, confidence[tagID] * 100.0, (int)goodMatches.size(), (int) keyPointsObject.size(), area);
         }
     }
     
@@ -178,8 +178,10 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
     }
     
     // See if it is worth making a conclusion
+    determinedId = 0;
+
     if ((maxConfidence > reqConfMinimum) && ((maxConfidence / secondConfidence) > reqConfRatio)) {
-        template_id = maxID;
+        determinedId = maxID + 1;
 
         if (showInternals) {
             ROS_INFO("Image contains %d, %.2f%% (%.2f) confidence", maxID,
@@ -198,7 +200,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
     }
 
 
-    return template_id;
+    return determinedId;
 }
 
 void ImagePipeline::searchInScene(cv::Mat &tagImage, cv::Mat &descriptorsScene, std::vector<cv::KeyPoint> &keyPointsObject,
