@@ -2,6 +2,7 @@
 #include <navigation.h>
 #include <robot_pose.h>
 #include <imagePipeline.h>
+#include <dirent.h>         // Used for reading in the test files
 
 int main(int argc, char** argv) {
     // Setup ROS.
@@ -37,12 +38,39 @@ int main(int argc, char** argv) {
 
         // Vision stuff past here, no touchy
 
-        // Location of test file (needs to be absolute)
-        char testFile[] = "/home/brobot/catkin_ws/src/mie443_contest2/testpics/bird6.png";
-        imagePipeline.loadImage(testFile);
-        imagePipeline.getTemplateID(boxes);
+        // Load in all test files
+        std::string testFileFolder = "/home/brobot/catkin_ws/src/mie443_contest2/testpics/";
+        std::vector<std::string> fileNames;
 
-        return 0;
+        DIR *dr;
+        struct dirent *en;
+        dr = opendir(testFileFolder.c_str()); //Open directory
+        if (dr) {
+            while ((en = readdir(dr)) != NULL) {
+                std::string temp = en->d_name; //print all directory name
+
+                if ((temp.length() > 5) && (temp.find(".png") > 0)) fileNames.push_back(temp); // Add files that end in PNG
+            }
+            closedir(dr); // Close directory
+        }
+
+        std::sort (fileNames.begin(), fileNames.end()); // Sort files alphabetically
+        int result[fileNames.size()];
+
+        // Go through each test file to ID
+        for (int i = 0; i < fileNames.size(); i++) {
+            std::string testFile = testFileFolder + fileNames[i];
+            imagePipeline.loadImage(testFile);
+            result[i] = imagePipeline.getTemplateID(boxes, false);
+        }
+
+        // Print result summary
+        printf("\nResults of analysis, ID# and file name.\n");
+        for (int i = 0; i < fileNames.size(); i++) {
+            printf("ID %2d: %s\n", result[i], fileNames[i].c_str());
+        }
+
+        return 0; // Only run this all once
         // End of vision stuff
 
         ros::Duration(1).sleep(); // Two second sleep per step
