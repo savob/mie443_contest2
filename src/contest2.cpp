@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    // Initialize image objectand subscriber.
+    // Initialize image object and subscriber.
     ImagePipeline imagePipeline(n);
     // Execute strategy.
     while(ros::ok()) {

@@ -89,7 +89,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
 
     //-- Step 1: Detect the keypoints using SURF Detector, compute the descriptors
     Ptr<SURF> detector = SURF::create( minHessian ); // Defined in header
-    std::vector<KeyPoint> keypointsObject, keyPointsScene;
+    std::vector<KeyPoint> keyPointsObject, keyPointsScene;
     Mat descriptorsScene;
 
     // Make features for the scene
@@ -107,13 +107,47 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
 
         std::vector<DMatch> goodMatches;
 
-        searchInScene(tagImage, descriptorsScene, keypointsObject, goodMatches, detector);
+        searchInScene(tagImage, descriptorsScene, keyPointsObject, goodMatches, detector);
 
-        confidence[tagID] = (float)goodMatches.size() / (float)keypointsObject.size();
+        confidence[tagID] = (float)goodMatches.size() / (float)keyPointsObject.size();
+
+        // Find object area in scene
+
+        //-- Localize the object
+        std::vector<Point2f> refPoints;
+        std::vector<Point2f> scenePoints;
+        for( size_t i = 0; i < goodMatches.size(); i++ ) {
+            //-- Get the keypoints from the good matches
+            refPoints.push_back( keyPointsObject[ goodMatches[i].queryIdx ].pt );
+            scenePoints.push_back( keyPointsScene[ goodMatches[i].trainIdx ].pt );
+        }
+
+        Mat H = findHomography(refPoints, scenePoints, RANSAC );
+
+        float refImageCol = (float)tagImage.cols;
+
+        //-- Get the corners from the image_1 ( the object to be "detected" )
+        std::vector<Point2f> cornersInReference(4);
+        cornersInReference[0] = Point2f(0, 0);
+        cornersInReference[1] = Point2f( refImageCol, 0 );
+        cornersInReference[2] = Point2f( refImageCol, (float)tagImage.rows );
+        cornersInReference[3] = Point2f( 0, (float)tagImage.rows );
+        std::vector<Point2f> cornersInScene(4);
+        cv::perspectiveTransform( cornersInReference, cornersInScene, H);
+
+        // Calculate area as space defined by two traingle that form the square
+        float area = 0;
+        area = float(cornersInScene[0].x * (cornersInScene[1].y - cornersInScene[2].y) + 
+            cornersInScene[1].x * (cornersInScene[2].y - cornersInScene[0].y) +
+            cornersInScene[2].x * (cornersInScene[0].y - cornersInScene[1].y)); 
+        area = area +float(cornersInScene[3].x * (cornersInScene[1].y - cornersInScene[2].y) + 
+            cornersInScene[1].x * (cornersInScene[2].y - cornersInScene[3].y) +
+            cornersInScene[2].x * (cornersInScene[3].y - cornersInScene[1].y));
+        area = area / 2;
         
         if (showInternals) {
-            printf("Template %2d - Confidence %5.2f%% - KP %4d / %4d\n", 
-                tagID, confidence[tagID] * 100.0, (int)goodMatches.size(), (int) keypointsObject.size());
+            printf("Template %2d - Confidence %5.2f%% - KP %4d / %4d - Area %6.2f\n", 
+                tagID, confidence[tagID] * 100.0, (int)goodMatches.size(), (int) keyPointsObject.size(), area);
         }
     }
     
@@ -147,10 +181,10 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
 
             // Redo winning search
             std::vector<DMatch> goodMatches;
-            searchInScene(boxes.templates[maxID], descriptorsScene, keypointsObject, goodMatches, detector);
+            searchInScene(boxes.templates[maxID], descriptorsScene, keyPointsObject, goodMatches, detector);
 
             // Show resulting matches
-            Mat imgOfMatches = ImagePipeline::drawSceneMatches(img, boxes.templates[maxID], goodMatches, keypointsObject, keyPointsScene);
+            Mat imgOfMatches = ImagePipeline::drawSceneMatches(img, boxes.templates[maxID], goodMatches, keyPointsObject, keyPointsScene);
             imshow("Selected match", imgOfMatches);
 
             cv::waitKey(250); // Wait until key pressed
@@ -161,14 +195,14 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
     return template_id;
 }
 
-void ImagePipeline::searchInScene(cv::Mat &refImage, cv::Mat &descriptorsScene, std::vector<cv::KeyPoint> &keypointsObject,
+void ImagePipeline::searchInScene(cv::Mat &tagImage, cv::Mat &descriptorsScene, std::vector<cv::KeyPoint> &keyPointsObject,
         std::vector<cv::DMatch> &goodMatches, cv::Ptr<cv::xfeatures2d::SURF> &detector) {
     
     using namespace cv;
     Mat descriptors_object;
 
     // Detect markers for the reference to find in the scene
-    detector->detectAndCompute( refImage, noArray(), keypointsObject, descriptors_object );
+    detector->detectAndCompute( tagImage, noArray(), keyPointsObject, descriptors_object );
 
     // Matching descriptor vectors with a FLANN based matcher
     // Since SURF is a floating-point descriptor NORM_L2 is used
@@ -178,7 +212,6 @@ void ImagePipeline::searchInScene(cv::Mat &refImage, cv::Mat &descriptorsScene, 
 
     //-- Filter matches using the Lowe's ratio test
     const float ratio_thresh = 0.75f;
-    std::vector<DMatch> goodMatches;
     for (size_t i = 0; i < knn_matches.size(); i++) {
         if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance) {
             goodMatches.push_back(knn_matches[i][0]);
@@ -194,13 +227,13 @@ void ImagePipeline::loadImage(std::string fileLocation, bool printMessage) {
     if (printMessage) ROS_INFO("Image loaded from \"%s\" into video feed.", fileLocation.c_str());
 }
 
-cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &refImage, std::vector<cv::DMatch> &matches, 
+cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &tagImage, std::vector<cv::DMatch> &matches, 
     std::vector<cv::KeyPoint> &keyPointsRef, std::vector<cv::KeyPoint> &keyPointsScene){
     using namespace cv;
 
     //-- Draw matches
     Mat imageOfMatches; // Image with matches illustrated
-    drawMatches(refImage, keyPointsRef, scene, keyPointsScene, matches, imageOfMatches, Scalar::all(-1),
+    drawMatches(tagImage, keyPointsRef, scene, keyPointsScene, matches, imageOfMatches, Scalar::all(-1),
                     Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
     //-- Localize the object
     std::vector<Point2f> refPoints;
@@ -213,14 +246,14 @@ cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &refImage, std::
 
     Mat H = findHomography(refPoints, scenePoints, RANSAC );
 
-    float refImageCol = (float)refImage.cols;
+    float refImageCol = (float)tagImage.cols;
 
     //-- Get the corners from the image_1 ( the object to be "detected" )
     std::vector<Point2f> cornersInReference(4);
     cornersInReference[0] = Point2f(0, 0);
     cornersInReference[1] = Point2f( refImageCol, 0 );
-    cornersInReference[2] = Point2f( refImageCol, (float)refImage.rows );
-    cornersInReference[3] = Point2f( 0, (float)refImage.rows );
+    cornersInReference[2] = Point2f( refImageCol, (float)tagImage.rows );
+    cornersInReference[3] = Point2f( 0, (float)tagImage.rows );
     std::vector<Point2f> cornersInScene(4);
     cv::perspectiveTransform( cornersInReference, cornersInScene, H);
 
