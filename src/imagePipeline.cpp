@@ -108,12 +108,15 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
 
         Mat imgOfMatches = ImagePipeline::drawSceneMatches(img, tagImage, good_matches, keypoints_object, keypoints_scene);
         
-        if (showInternals) imshow("Good Matches & Object detection", imgOfMatches);
+        if (showInternals) 
 
         confidence[tagID] = (float)good_matches.size() / (float)keypoints_scene.size();
-        if (showInternals) printf("Template %2d - Confidence %5.2f%%\n", tagID, confidence[tagID] * 100.0);
         
-        cv::waitKey(250); // Wait until key pressed
+        if (showInternals) {
+            imshow("Good Matches & Object detection", imgOfMatches);
+            printf("Template %2d - Confidence %5.2f%%\n", tagID, confidence[tagID] * 100.0);
+            cv::waitKey(250); // Wait until key pressed
+        }
     }
     
     // Find the most the ID and confidence of the two highest rated candidates
