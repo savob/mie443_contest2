@@ -49,7 +49,11 @@ int main(int argc, char** argv) {
             while ((en = readdir(dr)) != NULL) {
                 std::string temp = en->d_name; //print all directory name
 
-                if ((temp.length() > 5) && (temp.find(".png") > 0)) fileNames.push_back(temp); // Add files that end in PNG
+                if (temp.find(".png") != std::string::npos) {
+                    if (temp.find("dog") != std::string::npos) { // Limit to a single case
+                        fileNames.push_back(temp); // Add files that end in PNG
+                    }
+                }
             }
             closedir(dr); // Close directory
         }
