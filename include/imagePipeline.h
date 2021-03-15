@@ -22,6 +22,10 @@ class ImagePipeline {
 
         uint8_t skyVal = 178; // RGB value of the skybox
         const uint8_t removeVal = 0; // Value used to overwrite pixels we don't care for
+
+        // Used to produce an output of the reference image in the scene based on existing matches and points
+        cv::Mat drawSceneMatches(cv::Mat &scene, cv::Mat &refImage, std::vector<cv::DMatch> &matches, 
+            std::vector<cv::KeyPoint> &keyPointsRef, std::vector<cv::KeyPoint> &keyPointsScene);
     public:
         ImagePipeline(ros::NodeHandle& n);
         void imageCallback(const sensor_msgs::ImageConstPtr& msg);
