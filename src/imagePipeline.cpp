@@ -133,9 +133,10 @@ void ImagePipeline::loadImage(char* fileLocation) {
     // Replace image in pipeline with something else
     img = cv::imread(fileLocation, 1);
     isValid = true;
+    ROS_INFO("Image loaded from \"%s\" into video feed.", fileLocation);
 
     //cv::imshow("Loaded image", img);
-    cv::waitKey(10);
+    //cv::waitKey(10);
 }
 
 cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &refImage, std::vector<cv::DMatch> &matches, 
