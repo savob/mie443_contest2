@@ -111,42 +111,48 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
 
         confidence[tagID] = (float)goodMatches.size() / (float)keyPointsObject.size();
 
-        // Find object area in scene
+        // Find object area in scene if there is a possibility of it being present
 
-        //-- Localize the object
-        std::vector<Point2f> refPoints;
-        std::vector<Point2f> scenePoints;
-        for( size_t i = 0; i < goodMatches.size(); i++ ) {
-            //-- Get the keypoints from the good matches
-            refPoints.push_back( keyPointsObject[ goodMatches[i].queryIdx ].pt );
-            scenePoints.push_back( keyPointsScene[ goodMatches[i].trainIdx ].pt );
+        float area = 0;
+
+        if (confidence[tagID] > reqConfMinimum) {
+            //-- Localize the object
+            std::vector<Point2f> refPoints;
+            std::vector<Point2f> scenePoints;
+            for( size_t i = 0; i < goodMatches.size(); i++ ) {
+                //-- Get the keypoints from the good matches
+                refPoints.push_back( keyPointsObject[ goodMatches[i].queryIdx ].pt );
+                scenePoints.push_back( keyPointsScene[ goodMatches[i].trainIdx ].pt );
+            }
+
+            Mat H = findHomography(refPoints, scenePoints, RANSAC );
+
+            float refImageCol = (float)tagImage.cols;
+
+            //-- Get the corners from the image_1 ( the object to be "detected" )
+            std::vector<Point2f> cornersInReference(4);
+            cornersInReference[0] = Point2f(0, 0);
+            cornersInReference[1] = Point2f( refImageCol, 0 );
+            cornersInReference[2] = Point2f( refImageCol, (float)tagImage.rows );
+            cornersInReference[3] = Point2f( 0, (float)tagImage.rows );
+            std::vector<Point2f> cornersInScene(4);
+            cv::perspectiveTransform( cornersInReference, cornersInScene, H);
+
+            //for (int i = 0; i < 4; i++) printf("\tCorner %d - %.1f, %.1f\n", i, cornersInScene[i].x, cornersInScene[i].y);
+
+            // Calculate area as space defined by two traingle that form the square
+            
+            area = cornersInScene[0].x * (cornersInScene[1].y - cornersInScene[2].y) + 
+                cornersInScene[1].x * (cornersInScene[2].y - cornersInScene[0].y) +
+                cornersInScene[2].x * (cornersInScene[0].y - cornersInScene[1].y); 
+            area = area + cornersInScene[3].x * (cornersInScene[1].y - cornersInScene[2].y) + 
+                cornersInScene[1].x * (cornersInScene[2].y - cornersInScene[3].y) +
+                cornersInScene[2].x * (cornersInScene[3].y - cornersInScene[1].y);
+            area = area / 2;
         }
 
-        Mat H = findHomography(refPoints, scenePoints, RANSAC );
-
-        float refImageCol = (float)tagImage.cols;
-
-        //-- Get the corners from the image_1 ( the object to be "detected" )
-        std::vector<Point2f> cornersInReference(4);
-        cornersInReference[0] = Point2f(0, 0);
-        cornersInReference[1] = Point2f( refImageCol, 0 );
-        cornersInReference[2] = Point2f( refImageCol, (float)tagImage.rows );
-        cornersInReference[3] = Point2f( 0, (float)tagImage.rows );
-        std::vector<Point2f> cornersInScene(4);
-        cv::perspectiveTransform( cornersInReference, cornersInScene, H);
-
-        // Calculate area as space defined by two traingle that form the square
-        float area = 0;
-        area = float(cornersInScene[0].x * (cornersInScene[1].y - cornersInScene[2].y) + 
-            cornersInScene[1].x * (cornersInScene[2].y - cornersInScene[0].y) +
-            cornersInScene[2].x * (cornersInScene[0].y - cornersInScene[1].y)); 
-        area = area +float(cornersInScene[3].x * (cornersInScene[1].y - cornersInScene[2].y) + 
-            cornersInScene[1].x * (cornersInScene[2].y - cornersInScene[3].y) +
-            cornersInScene[2].x * (cornersInScene[3].y - cornersInScene[1].y));
-        area = area / 2;
-        
         if (showInternals) {
-            printf("Template %2d - Confidence %5.2f%% - KP %4d / %4d - Area %6.2f\n", 
+            printf("Template %2d - Confidence %5.2f%% - KP %4d / %4d - Area %6.0f\n", 
                 tagID, confidence[tagID] * 100.0, (int)goodMatches.size(), (int) keyPointsObject.size(), area);
         }
     }
