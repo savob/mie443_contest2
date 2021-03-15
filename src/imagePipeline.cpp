@@ -89,11 +89,15 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
 
     //-- Step 1: Detect the keypoints using SURF Detector, compute the descriptors
     Ptr<SURF> detector = SURF::create( minHessian ); // Defined in header
-    std::vector<KeyPoint> keypoints_object, keypoints_scene;
-    Mat descriptors_scene;
+    std::vector<KeyPoint> keypointsObject, keyPointsScene;
+    Mat descriptorsScene;
 
     // Make features for the scene
-    detector->detectAndCompute( img, noArray(), keypoints_scene, descriptors_scene );
+    detector->detectAndCompute( img, noArray(), keyPointsScene, descriptorsScene );
+
+    if (showInternals) {
+        printf("Scene has %d keypoints\n", (int) keyPointsScene.size());
+    }
 
     float confidence[boxes.templates.size()];
     for (int tagID = 0; tagID < boxes.templates.size(); tagID++) {
@@ -101,14 +105,15 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
         Mat tagImage = boxes.templates[tagID];
         //cv::imshow("Tag checked", tagImage);
 
-        std::vector<DMatch> good_matches;
+        std::vector<DMatch> goodMatches;
 
-        searchInScene(tagImage, descriptors_scene, keypoints_object, good_matches, detector);
+        searchInScene(tagImage, descriptorsScene, keypointsObject, goodMatches, detector);
 
-        confidence[tagID] = (float)good_matches.size() / (float)keypoints_object.size();
+        confidence[tagID] = (float)goodMatches.size() / (float)keypointsObject.size();
         
         if (showInternals) {
-            printf("Template %2d - Confidence %5.2f%%\n", tagID, confidence[tagID] * 100.0);
+            printf("Template %2d - Confidence %5.2f%% - KP %4d / %4d\n", 
+                tagID, confidence[tagID] * 100.0, (int)goodMatches.size(), (int) keypointsObject.size());
         }
     }
     
@@ -141,11 +146,11 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
                 maxConfidence * 100.0, (maxConfidence / secondConfidence));
 
             // Redo winning search
-            std::vector<DMatch> good_matches;
-            searchInScene(boxes.templates[maxID], descriptors_scene, keypoints_object, good_matches, detector);
+            std::vector<DMatch> goodMatches;
+            searchInScene(boxes.templates[maxID], descriptorsScene, keypointsObject, goodMatches, detector);
 
             // Show resulting matches
-            Mat imgOfMatches = ImagePipeline::drawSceneMatches(img, boxes.templates[maxID], good_matches, keypoints_object, keypoints_scene);
+            Mat imgOfMatches = ImagePipeline::drawSceneMatches(img, boxes.templates[maxID], goodMatches, keypointsObject, keyPointsScene);
             imshow("Selected match", imgOfMatches);
 
             cv::waitKey(250); // Wait until key pressed
@@ -173,7 +178,7 @@ void ImagePipeline::searchInScene(cv::Mat &refImage, cv::Mat &descriptorsScene, 
 
     //-- Filter matches using the Lowe's ratio test
     const float ratio_thresh = 0.75f;
-    std::vector<DMatch> good_matches;
+    std::vector<DMatch> goodMatches;
     for (size_t i = 0; i < knn_matches.size(); i++) {
         if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance) {
             goodMatches.push_back(knn_matches[i][0]);
@@ -194,8 +199,8 @@ cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &refImage, std::
     using namespace cv;
 
     //-- Draw matches
-    Mat img_matches; // Image with matches illustrated
-    drawMatches(refImage, keyPointsRef, scene, keyPointsScene, matches, img_matches, Scalar::all(-1),
+    Mat imageOfMatches; // Image with matches illustrated
+    drawMatches(refImage, keyPointsRef, scene, keyPointsScene, matches, imageOfMatches, Scalar::all(-1),
                     Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
     //-- Localize the object
     std::vector<Point2f> refPoints;
@@ -220,14 +225,14 @@ cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &refImage, std::
     cv::perspectiveTransform( cornersInReference, cornersInScene, H);
 
     //-- Draw lines between the corners (the mapped object in the scene - image_2 )
-    cv::line( img_matches, cornersInScene[0] + Point2f(refImageCol, 0),
+    cv::line( imageOfMatches, cornersInScene[0] + Point2f(refImageCol, 0),
             cornersInScene[1] + Point2f(refImageCol, 0), Scalar(0, 255, 0), 4 );
-    cv::line( img_matches, cornersInScene[1] + Point2f(refImageCol, 0),
+    cv::line( imageOfMatches, cornersInScene[1] + Point2f(refImageCol, 0),
             cornersInScene[2] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
-    cv::line( img_matches, cornersInScene[2] + Point2f(refImageCol, 0),
+    cv::line( imageOfMatches, cornersInScene[2] + Point2f(refImageCol, 0),
             cornersInScene[3] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
-    cv::line( img_matches, cornersInScene[3] + Point2f(refImageCol, 0),
+    cv::line( imageOfMatches, cornersInScene[3] + Point2f(refImageCol, 0),
             cornersInScene[0] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
     
-    return img_matches;
+    return imageOfMatches;
 }
