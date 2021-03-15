@@ -26,13 +26,13 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
 
     if(!isValid) {
         ROS_ERROR("INVALID IMAGE!");
-        return template_id;
+        return -1;
     } else if(img.empty() || img.rows <= 0 || img.cols <= 0) {
         ROS_ERROR("VALID IMAGE, BUT STILL A PROBLEM EXISTS!");
         std::cout << "\timg.empty():" << img.empty() << std::endl;
         std::cout << "\timg.rows:" << img.rows << std::endl;
         std::cout << "\timg.cols:" << img.cols << std::endl;
-        return template_id;
+        return -1;
     }
 
     // Preprocesing
@@ -172,14 +172,12 @@ void ImagePipeline::searchInScene(cv::Mat &refImage, cv::Mat &descriptorsScene, 
     }
 }
 
-void ImagePipeline::loadImage(char* fileLocation) {
+void ImagePipeline::loadImage(char* fileLocation, bool printMessage) {
     // Replace image in pipeline with something else
     img = cv::imread(fileLocation, 1);
     isValid = true;
-    ROS_INFO("Image loaded from \"%s\" into video feed.", fileLocation);
 
-    //cv::imshow("Loaded image", img);
-    //cv::waitKey(10);
+    if (printMessage) ROS_INFO("Image loaded from \"%s\" into video feed.", fileLocation);
 }
 
 cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &refImage, std::vector<cv::DMatch> &matches, 
