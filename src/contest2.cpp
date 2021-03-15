@@ -42,6 +42,7 @@ int main(int argc, char** argv) {
         imagePipeline.loadImage(testFile);
         imagePipeline.getTemplateID(boxes);
 
+        return 0;
         // End of vision stuff
 
         ros::Duration(1).sleep(); // Two second sleep per step
