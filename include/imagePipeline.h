@@ -26,6 +26,10 @@ class ImagePipeline {
         // Used to produce an output of the reference image in the scene based on existing matches and points
         cv::Mat drawSceneMatches(cv::Mat &scene, cv::Mat &refImage, std::vector<cv::DMatch> &matches, 
             std::vector<cv::KeyPoint> &keyPointsRef, std::vector<cv::KeyPoint> &keyPointsScene);
+
+        // Searches for an image in a scene
+        void searchInScene(cv::Mat &refImage, cv::Mat &descriptorsScene, std::vector<cv::KeyPoint> &keypointsObject,
+            std::vector<cv::DMatch> &goodMatches, cv::Ptr<cv::xfeatures2d::SURF> &detector);
     public:
         ImagePipeline(ros::NodeHandle& n);
         void imageCallback(const sensor_msgs::ImageConstPtr& msg);

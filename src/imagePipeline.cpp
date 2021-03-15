@@ -91,7 +91,10 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
     int minHessian = 500;
     Ptr<SURF> detector = SURF::create( minHessian );
     std::vector<KeyPoint> keypoints_object, keypoints_scene;
-    Mat descriptors_object, descriptors_scene;
+    Mat descriptors_scene;
+
+    // Make features for the scene
+    detector->detectAndCompute( img, noArray(), keypoints_scene, descriptors_scene );
 
     float confidence[boxes.templates.size()];
     
@@ -100,27 +103,13 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
         Mat tagImage = boxes.templates[tagID];
         //cv::imshow("Tag checked", tagImage);
 
-        // Detect markers for the tag and the scene (img)
-        detector->detectAndCompute( tagImage, noArray(), keypoints_object, descriptors_object );
-        detector->detectAndCompute( img, noArray(), keypoints_scene, descriptors_scene );
-
-        //-- Step 2: Matching descriptor vectors with a FLANN based matcher
-        // Since SURF is a floating-point descriptor NORM_L2 is used
-        Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED);
-        std::vector< std::vector<DMatch> > knn_matches;
-        matcher->knnMatch( descriptors_object, descriptors_scene, knn_matches, 2 );
-        //-- Filter matches using the Lowe's ratio test
-        const float ratio_thresh = 0.75f;
         std::vector<DMatch> good_matches;
-        for (size_t i = 0; i < knn_matches.size(); i++) {
-            if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance) {
-                good_matches.push_back(knn_matches[i][0]);
-            }
-        }
 
-        Mat img_matches = ImagePipeline::drawSceneMatches(img, tagImage, good_matches, keypoints_object, keypoints_scene);
+        searchInScene(tagImage, descriptors_scene, keypoints_object, good_matches, detector);
+
+        Mat imgOfMatches = ImagePipeline::drawSceneMatches(img, tagImage, good_matches, keypoints_object, keypoints_scene);
         
-        imshow("Good Matches & Object detection", img_matches );
+        imshow("Good Matches & Object detection", imgOfMatches);
 
         confidence[tagID] = (float)good_matches.size() / (float)keypoints_scene.size();
         printf("Template %d - Confidence %.2f\n", tagID, confidence[tagID] * 100.0);
@@ -131,6 +120,31 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
 
 
     return template_id;
+}
+
+void ImagePipeline::searchInScene(cv::Mat &refImage, cv::Mat &descriptorsScene, std::vector<cv::KeyPoint> &keypointsObject,
+        std::vector<cv::DMatch> &goodMatches, cv::Ptr<cv::xfeatures2d::SURF> &detector) {
+    
+    using namespace cv;
+    Mat descriptors_object;
+
+    // Detect markers for the reference to find in the scene
+    detector->detectAndCompute( refImage, noArray(), keypointsObject, descriptors_object );
+
+    // Matching descriptor vectors with a FLANN based matcher
+    // Since SURF is a floating-point descriptor NORM_L2 is used
+    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED);
+    std::vector< std::vector<DMatch> > knn_matches;
+    matcher->knnMatch( descriptors_object, descriptorsScene, knn_matches, 2 );
+
+    //-- Filter matches using the Lowe's ratio test
+    const float ratio_thresh = 0.75f;
+    std::vector<DMatch> good_matches;
+    for (size_t i = 0; i < knn_matches.size(); i++) {
+        if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance) {
+            goodMatches.push_back(knn_matches[i][0]);
+        }
+    }
 }
 
 void ImagePipeline::loadImage(char* fileLocation) {
@@ -146,7 +160,6 @@ void ImagePipeline::loadImage(char* fileLocation) {
 cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &refImage, std::vector<cv::DMatch> &matches, 
     std::vector<cv::KeyPoint> &keyPointsRef, std::vector<cv::KeyPoint> &keyPointsScene){
     using namespace cv;
-    using namespace cv::xfeatures2d;
 
     //-- Draw matches
     Mat img_matches; // Image with matches illustrated
@@ -173,7 +186,7 @@ cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &refImage, std::
     cornersInReference[3] = Point2f( 0, (float)refImage.rows );
     std::vector<Point2f> cornersInScene(4);
     cv::perspectiveTransform( cornersInReference, cornersInScene, H);
-    
+
     //-- Draw lines between the corners (the mapped object in the scene - image_2 )
     cv::line( img_matches, cornersInScene[0] + Point2f(refImageCol, 0),
             cornersInScene[1] + Point2f(refImageCol, 0), Scalar(0, 255, 0), 4 );
