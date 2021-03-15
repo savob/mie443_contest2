@@ -97,7 +97,6 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
     detector->detectAndCompute( img, noArray(), keypoints_scene, descriptors_scene );
 
     float confidence[boxes.templates.size()];
-    
     for (int tagID = 0; tagID < boxes.templates.size(); tagID++) {
         // File for current tag check
         Mat tagImage = boxes.templates[tagID];
@@ -112,11 +111,37 @@ int ImagePipeline::getTemplateID(Boxes& boxes) {
         imshow("Good Matches & Object detection", imgOfMatches);
 
         confidence[tagID] = (float)good_matches.size() / (float)keypoints_scene.size();
-        printf("Template %d - Confidence %.2f\n", tagID, confidence[tagID] * 100.0);
+        printf("Template %2d - Confidence %5.2f%%\n", tagID, confidence[tagID] * 100.0);
         
-        cv::waitKey(500); // Wait until key pressed
+        cv::waitKey(250); // Wait until key pressed
     }
     
+    // Find the most the ID and confidence of the two highest rated candidates
+    float maxConfidence = 0.0, secondConfidence = 0.0;
+    uint8_t maxIndex = 0, secondIndex = 0;
+
+    for (uint8_t i = 0; i < boxes.templates.size(); i++) {
+        float curConfidence = confidence[i];
+
+        if (curConfidence > maxConfidence) {
+            secondConfidence = maxConfidence;
+            maxConfidence = curConfidence;
+
+            secondIndex = maxIndex;
+            maxIndex = i;
+        }
+        else if (curConfidence > secondConfidence) {
+            secondConfidence =  curConfidence;
+            secondIndex = i;
+        }
+    }
+    
+    // See if it is worth making a conclusion
+    if ((maxConfidence > reqConfMinimum) && ((maxConfidence / secondConfidence) > reqConfRatio)) {
+        ROS_INFO("Image contains %d, %.2f%% (%.2f) confidence", maxIndex,
+            maxConfidence * 100.0, (maxConfidence / secondConfidence));
+        template_id = maxIndex;
+    }
 
 
     return template_id;

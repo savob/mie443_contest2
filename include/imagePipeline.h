@@ -31,6 +31,9 @@ class ImagePipeline {
         void searchInScene(cv::Mat &refImage, cv::Mat &descriptorsScene, std::vector<cv::KeyPoint> &keypointsObject,
             std::vector<cv::DMatch> &goodMatches, cv::Ptr<cv::xfeatures2d::SURF> &detector);
     public:
+        float reqConfRatio   = 1.20; // Ratio between max and second to make a conclusion
+        float reqConfMinimum = 0.20; // Minimum threshold to be considered conclusive
+
         ImagePipeline(ros::NodeHandle& n);
         void imageCallback(const sensor_msgs::ImageConstPtr& msg);
         int getTemplateID(Boxes& boxes);
