@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
         for (int i = 0; i < fileNames.size(); i++) {
             std::string testFile = testFileFolder + fileNames[i];
             imagePipeline.loadImage(testFile);
-            result[i] = imagePipeline.getTemplateID(boxes, false);
+            result[i] = imagePipeline.getTemplateID(boxes, true);
         }
 
         // Print result summary

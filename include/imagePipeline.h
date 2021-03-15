@@ -32,7 +32,9 @@ class ImagePipeline {
             std::vector<cv::DMatch> &goodMatches, cv::Ptr<cv::xfeatures2d::SURF> &detector);
     public:
         float reqConfRatio   = 1.20; // Ratio between max and second to make a conclusion
-        float reqConfMinimum = 0.20; // Minimum threshold to be considered conclusive
+        float reqConfMinimum = 0.07; // Minimum threshold to be considered conclusive
+
+        int minHessian = 400;
 
         ImagePipeline(ros::NodeHandle& n);
         void imageCallback(const sensor_msgs::ImageConstPtr& msg);
