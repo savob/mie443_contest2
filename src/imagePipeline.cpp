@@ -182,12 +182,12 @@ void ImagePipeline::searchInScene(cv::Mat &refImage, cv::Mat &descriptorsScene, 
     }
 }
 
-void ImagePipeline::loadImage(char* fileLocation, bool printMessage) {
+void ImagePipeline::loadImage(std::string fileLocation, bool printMessage) {
     // Replace image in pipeline with something else
     img = cv::imread(fileLocation, 1);
     isValid = true;
 
-    if (printMessage) ROS_INFO("Image loaded from \"%s\" into video feed.", fileLocation);
+    if (printMessage) ROS_INFO("Image loaded from \"%s\" into video feed.", fileLocation.c_str());
 }
 
 cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &refImage, std::vector<cv::DMatch> &matches, 
