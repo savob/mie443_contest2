@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
                 std::string temp = en->d_name; //print all directory name
 
                 if (temp.find(".png") != std::string::npos) {
-                    if (temp.find("dragon") != std::string::npos) { // Limit to a single case
+                    if (temp.find("") != std::string::npos) { // Limit to a single case
                         fileNames.push_back(temp); // Add files that end in PNG
                     }
                 }

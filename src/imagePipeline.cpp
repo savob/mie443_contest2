@@ -102,8 +102,11 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
     float confidence[boxes.templates.size()];
     for (int tagID = 0; tagID < boxes.templates.size(); tagID++) {
         // File for current tag check
-        Mat tagImage = boxes.templates[tagID];
-        //cv::imshow("Tag checked", tagImage);
+        Mat tagImageRaw = boxes.templates[tagID];
+        Mat tagImage = tagImageRaw;
+
+        GaussianBlur(tagImageRaw, tagImage, Size( 3, 3), 0, 0); // Add blur to aid feature matching
+        //cv::imshow("Tag as used", tagImage);
 
         std::vector<DMatch> goodMatches;
 
@@ -145,8 +148,6 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
                 ROS_WARN("Unable to transform perspective using reference %d", tagID + 1);
                 confidence[tagID] = 0;
             }
-            
-            
 
             //for (int i = 0; i < 4; i++) printf("\tCorner %d - %.1f, %.1f\n", i, cornersInScene[i].x, cornersInScene[i].y);
 
@@ -176,6 +177,8 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
     for (uint8_t i = 0; i < boxes.templates.size(); i++) {
         float curConfidence = confidence[i];
 
+        
+
         if (curConfidence > maxConfidence) {
             secondConfidence = maxConfidence;
             maxConfidence = curConfidence;
@@ -192,7 +195,11 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
     // See if it is worth making a conclusion
     determinedId = 0;
 
-    if ((maxConfidence > reqConfMinimum) && ((maxConfidence / secondConfidence) > reqConfRatio)) {
+    if (maxConfidence < reqConfMinimum) {
+        // If there is no satisfactory option 
+        ROS_INFO("Failed to find a match.");
+    }
+    else if ((maxConfidence > reqConfMinimum) && ((maxConfidence / secondConfidence) > reqConfRatio)) {
         determinedId = maxID + 1;
 
         if (showInternals) {
@@ -210,7 +217,6 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
             cv::waitKey(250); // Wait until key pressed
         }
     }
-
 
     return determinedId;
 }
@@ -275,17 +281,23 @@ cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &tagImage, std::
     cornersInReference[2] = Point2f( refImageCol, (float)tagImage.rows );
     cornersInReference[3] = Point2f( 0, (float)tagImage.rows );
     std::vector<Point2f> cornersInScene(4);
-    cv::perspectiveTransform( cornersInReference, cornersInScene, H);
 
-    //-- Draw lines between the corners (the mapped object in the scene - image_2 )
-    cv::line( imageOfMatches, cornersInScene[0] + Point2f(refImageCol, 0),
-            cornersInScene[1] + Point2f(refImageCol, 0), Scalar(0, 255, 0), 4 );
-    cv::line( imageOfMatches, cornersInScene[1] + Point2f(refImageCol, 0),
-            cornersInScene[2] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
-    cv::line( imageOfMatches, cornersInScene[2] + Point2f(refImageCol, 0),
-            cornersInScene[3] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
-    cv::line( imageOfMatches, cornersInScene[3] + Point2f(refImageCol, 0),
-            cornersInScene[0] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
+    try {
+        cv::perspectiveTransform( cornersInReference, cornersInScene, H);
+
+        //-- Draw lines between the corners (the mapped object in the scene - image_2 )
+        cv::line( imageOfMatches, cornersInScene[0] + Point2f(refImageCol, 0),
+                cornersInScene[1] + Point2f(refImageCol, 0), Scalar(0, 255, 0), 4 );
+        cv::line( imageOfMatches, cornersInScene[1] + Point2f(refImageCol, 0),
+                cornersInScene[2] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
+        cv::line( imageOfMatches, cornersInScene[2] + Point2f(refImageCol, 0),
+                cornersInScene[3] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
+        cv::line( imageOfMatches, cornersInScene[3] + Point2f(refImageCol, 0),
+                cornersInScene[0] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
+    }
+    catch (const std::exception& e) {
+        ROS_INFO("Can't draw matches");
+    }
     
     return imageOfMatches;
 }
