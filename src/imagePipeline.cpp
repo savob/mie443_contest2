@@ -184,7 +184,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
         determinedId = maxID + 1;
 
         if (showInternals) {
-            ROS_INFO("Image contains %d, %.2f%% (%.2f) confidence", maxID + 1,
+            ROS_INFO("Image contains %d, %.2f%% (%.2f) confidence", determinedId,
                 maxConfidence * 100.0, (maxConfidence / secondConfidence));
 
             // Redo winning search
