@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
         // Test parameters
         std::string testFileFolder = "/home/brobot/catkin_ws/src/mie443_contest2/testpics/";
         bool printInnerWorks = true;
-        std::string searchTerm = "pepper";
+        std::string searchTerm = "dog";
         // Leave as "" for all files in folder (not recommended since too many consecutive searches results in errors)
 
         // Load in all test files
@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
 
         return 0; // Only run this all once
 #else
-        ROS_INFO_ONCE("\n\nNOT RUNNING VISION TEST\n\n"); // Inform user that vision test is no being run
+        ROS_INFO_ONCE("\n\nNOT RUNNING VISION TEST\n\n"); // Inform user that vision test is not being run
 #endif
         
         // End of vision stuff
