@@ -96,7 +96,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
     detector->detectAndCompute( img, noArray(), keyPointsScene, descriptorsScene );
 
     if (showInternals) {
-        printf("Scene has %d keypoints\n", (int) keyPointsScene.size());
+        printf("\tScene has %d keypoints\n", (int) keyPointsScene.size());
     }
 
     float confidence[boxes.templates.size()];

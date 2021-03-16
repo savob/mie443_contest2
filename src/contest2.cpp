@@ -37,21 +37,27 @@ int main(int argc, char** argv) {
 
 
         // Vision stuff past here, no touchy
+        
+        // Test parameters
+        std::string testFileFolder = "/home/brobot/catkin_ws/src/mie443_contest2/testpics/";
+        bool printInnerWorks = true;
+        std::string searchTerm = "pepper";
+        // Leave as "" for all files in folder (not recommended since too many consecutive searches results in errors)
 
         // Load in all test files
-        std::string testFileFolder = "/home/brobot/catkin_ws/src/mie443_contest2/testpics/";
         std::vector<std::string> fileNames;
 
         DIR *dr;
         struct dirent *en;
-        dr = opendir(testFileFolder.c_str()); //Open directory
+        dr = opendir(testFileFolder.c_str()); // Open directory
         if (dr) {
             while ((en = readdir(dr)) != NULL) {
-                std::string temp = en->d_name; //print all directory name
+                std::string temp = en->d_name; // Grab file names
 
+                // Add files that end in PNG and contain search term
                 if (temp.find(".png") != std::string::npos) {
-                    if (temp.find("") != std::string::npos) { // Limit to a single case
-                        fileNames.push_back(temp); // Add files that end in PNG
+                    if (temp.find(searchTerm) != std::string::npos) {
+                        fileNames.push_back(temp); 
                     }
                 }
             }
@@ -65,7 +71,7 @@ int main(int argc, char** argv) {
         for (int i = 0; i < fileNames.size(); i++) {
             std::string testFile = testFileFolder + fileNames[i];
             imagePipeline.loadImage(testFile);
-            result[i] = imagePipeline.getTemplateID(boxes, true);
+            result[i] = imagePipeline.getTemplateID(boxes, printInnerWorks);
         }
 
         // Print result summary
@@ -75,6 +81,7 @@ int main(int argc, char** argv) {
         }
 
         return 0; // Only run this all once
+        
         // End of vision stuff
 
         ros::Duration(1).sleep(); // Two second sleep per step
