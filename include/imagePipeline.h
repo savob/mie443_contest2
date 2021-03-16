@@ -33,7 +33,11 @@ class ImagePipeline {
     public:
         float reqConfRatio   = 1.20; // Ratio between max and second to make a conclusion
         float reqConfMinimum = 0.07; // Minimum threshold to be considered conclusive
+
         float reqMinArea = 0.0; // Minimum area needed to be considered
+        float areaConfidenceFactor = 0.00005; // Factor used to multiply area by before multiplying that to confidence
+
+        // Confidence = (matching features / reference's features) * area * areaFactor
 
         int minHessian = 350;
 

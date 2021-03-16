@@ -166,7 +166,10 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
             }
         }
 
-        if (area <= reqMinArea) confidence[tagID] = 0; // Nulify confidence if it isn't present
+        if (area <= reqMinArea) confidence[tagID] = 0; // Nullify confidence if it isn't present
+        else confidence[tagID] = confidence[tagID] * area * areaConfidenceFactor; // Add area to confidence
+        // Area is added to prefer objects that are closer to rover but might have some of their features out of
+        // frame, resulting in a lower "confidence" than a fully visible, but futher object in the background
 
         if (showInternals) {
             printf("Template %2d - Confidence %5.2f%% - KP %4d / %4d - Area %6.0f\n", 
