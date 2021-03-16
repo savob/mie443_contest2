@@ -172,7 +172,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
         // frame, resulting in a lower "confidence" than a fully visible, but futher object in the background
 
         if (showInternals) {
-            printf("Template %2d - Confidence %5.2f%% - KP %4d / %4d - Area %6.0f\n", 
+            printf("Template %2d - Confidence %6.2f%% - KP %4d / %4d - Area %6.0f\n", 
                 tagID + 1, confidence[tagID] * 100.0, (int)goodMatches.size(), (int) keyPointsObject.size(), area);
         }
     }
