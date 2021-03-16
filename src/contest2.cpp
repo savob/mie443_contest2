@@ -88,6 +88,18 @@ int main(int argc, char** argv) {
         return 0; // Only run this all once
 #else
         ROS_INFO_ONCE("\n\nNOT RUNNING VISION TEST\n\n"); // Inform user that vision test is not being run
+
+        int ID = imagePipeline.getTemplateID(boxes, false); // Check if there is something present, do not print internals
+        // NOTE: DO NOT CALL IN RAPID SUCCESSION
+        // TODO: See if this is related to period between calls or quantity of calls
+        if (ID == -1) {
+            // Handle error... or don't
+        }
+        else {
+            // Completed scan without event
+            // 0 for blank/nothing to spot
+            // >0 matches template ID spotted
+        }
 #endif
         
         // End of vision stuff
