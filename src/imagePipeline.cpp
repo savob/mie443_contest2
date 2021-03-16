@@ -105,6 +105,10 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
         Mat tagImageRaw = boxes.templates[tagID];
         Mat tagImage = tagImageRaw;
 
+        if (tagID == 11) {
+            // Handle pepper
+        }
+
         GaussianBlur(tagImageRaw, tagImage, Size( 3, 3), 0, 0); // Add blur to aid feature matching
         //cv::imshow("Tag as used", tagImage);
 
