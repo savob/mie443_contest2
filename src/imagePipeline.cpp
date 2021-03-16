@@ -119,50 +119,54 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
         float area = 0;
 
         if (confidence[tagID] > reqConfMinimum) {
-            //-- Localize the object
+            // Localize the object
             std::vector<Point2f> refPoints;
             std::vector<Point2f> scenePoints;
             for( size_t i = 0; i < goodMatches.size(); i++ ) {
-                //-- Get the keypoints from the good matches
+                // Get the keypoints from the good matches
                 refPoints.push_back( keyPointsObject[ goodMatches[i].queryIdx ].pt );
                 scenePoints.push_back( keyPointsScene[ goodMatches[i].trainIdx ].pt );
             }
 
+            // Determine transformation matrix of reference to scene pixels
             Mat H = findHomography(refPoints, scenePoints, RANSAC );
 
-            float refImageCol = (float)tagImage.cols;
+            // Check if there is a possible transform
+            if (H.empty()) {
+                // Failed to find a transform from reference to scene
 
-            //-- Get the corners from the image_1 ( the object to be "detected" )
-            std::vector<Point2f> cornersInReference(4);
-            cornersInReference[0] = Point2f(0, 0);
-            cornersInReference[1] = Point2f( refImageCol, 0 );
-            cornersInReference[2] = Point2f( refImageCol, (float)tagImage.rows );
-            cornersInReference[3] = Point2f( 0, (float)tagImage.rows );
-            std::vector<Point2f> cornersInScene(4);
-
-            // Try to apply transform. If it fails, record a bad match
-            try {
-                cv::perspectiveTransform( cornersInReference, cornersInScene, H);
-            }
-            catch(const std::exception& e) {
-                ROS_WARN("Unable to transform perspective using reference %d", tagID + 1);
+                ROS_WARN("Unable to transform perspective using reference %d.", tagID + 1, H.empty());
                 confidence[tagID] = 0;
+
+                // Code to try and interate until resolved
+                //tagID--; 
+                //continue;
             }
+            else {
+                // Tranform from refence to scene is possible
 
-            //for (int i = 0; i < 4; i++) printf("\tCorner %d - %.1f, %.1f\n", i, cornersInScene[i].x, cornersInScene[i].y);
+                // Get the corners from the reference image
+                std::vector<Point2f> cornersInReference(4);
+                cornersInReference[0] = Point2f(0, 0);
+                cornersInReference[1] = Point2f((float)tagImage.cols, 0 );
+                cornersInReference[2] = Point2f((float)tagImage.cols, (float)tagImage.rows );
+                cornersInReference[3] = Point2f(0, (float)tagImage.rows );
+                std::vector<Point2f> corInScene(4);
 
-            // Calculate area as space defined by two traingle that form the square
-            
-            area = cornersInScene[0].x * (cornersInScene[1].y - cornersInScene[2].y) + 
-                cornersInScene[1].x * (cornersInScene[2].y - cornersInScene[0].y) +
-                cornersInScene[2].x * (cornersInScene[0].y - cornersInScene[1].y); 
-            area = area + cornersInScene[3].x * (cornersInScene[1].y - cornersInScene[2].y) + 
-                cornersInScene[1].x * (cornersInScene[2].y - cornersInScene[3].y) +
-                cornersInScene[2].x * (cornersInScene[3].y - cornersInScene[1].y);
-            area = area / 2;
+                // Apply transform to reference corners to transform into scene bounds
+                cv::perspectiveTransform( cornersInReference, corInScene, H);
+                
+                // Calculate area of the region
+                // (1/2) * {(x1y2 + x2y3 + x3y4 + x4y1) - (x2y1 + x3y2 + x4y3 + x1y4)}
+                area = corInScene[0].x * corInScene[1].y + corInScene[1].x * corInScene[2].y +
+                    corInScene[2].x * corInScene[3].y + corInScene[3].x * corInScene[0].y; 
+                area = area - (corInScene[1].x * corInScene[0].y + corInScene[2].x * corInScene[1].y +
+                    corInScene[3].x * corInScene[2].y + corInScene[0].x * corInScene[3].y);
+                area = area / 2;
+            }
         }
 
-        if (area < reqMinArea) confidence[tagID] = 0; // Nulify confidence if it isn't present
+        if (area <= reqMinArea) confidence[tagID] = 0; // Nulify confidence if it isn't present
 
         if (showInternals) {
             printf("Template %2d - Confidence %5.2f%% - KP %4d / %4d - Area %6.0f\n", 
@@ -176,8 +180,6 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
 
     for (uint8_t i = 0; i < boxes.templates.size(); i++) {
         float curConfidence = confidence[i];
-
-        
 
         if (curConfidence > maxConfidence) {
             secondConfidence = maxConfidence;
@@ -255,6 +257,7 @@ void ImagePipeline::loadImage(std::string fileLocation, bool printMessage) {
 
 cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &tagImage, std::vector<cv::DMatch> &matches, 
     std::vector<cv::KeyPoint> &keyPointsRef, std::vector<cv::KeyPoint> &keyPointsScene){
+    
     using namespace cv;
 
     //-- Draw matches
@@ -272,30 +275,32 @@ cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &tagImage, std::
 
     Mat H = findHomography(refPoints, scenePoints, RANSAC );
 
-    float refImageCol = (float)tagImage.cols;
+    if (!H.empty()) {
+        // Can preform transform from reference to scene
 
-    //-- Get the corners from the image_1 ( the object to be "detected" )
-    std::vector<Point2f> cornersInReference(4);
-    cornersInReference[0] = Point2f(0, 0);
-    cornersInReference[1] = Point2f( refImageCol, 0 );
-    cornersInReference[2] = Point2f( refImageCol, (float)tagImage.rows );
-    cornersInReference[3] = Point2f( 0, (float)tagImage.rows );
-    std::vector<Point2f> cornersInScene(4);
+        float refImageCol = (float)tagImage.cols;
 
-    try {
-        cv::perspectiveTransform( cornersInReference, cornersInScene, H);
+        //-- Get the corners from the image_1 ( the object to be "detected" )
+        std::vector<Point2f> cornersInReference(4);
+        cornersInReference[0] = Point2f(0, 0);
+        cornersInReference[1] = Point2f( refImageCol, 0 );
+        cornersInReference[2] = Point2f( refImageCol, (float)tagImage.rows );
+        cornersInReference[3] = Point2f( 0, (float)tagImage.rows );
+        std::vector<Point2f> corInScene(4);
 
-        //-- Draw lines between the corners (the mapped object in the scene - image_2 )
-        cv::line( imageOfMatches, cornersInScene[0] + Point2f(refImageCol, 0),
-                cornersInScene[1] + Point2f(refImageCol, 0), Scalar(0, 255, 0), 4 );
-        cv::line( imageOfMatches, cornersInScene[1] + Point2f(refImageCol, 0),
-                cornersInScene[2] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
-        cv::line( imageOfMatches, cornersInScene[2] + Point2f(refImageCol, 0),
-                cornersInScene[3] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
-        cv::line( imageOfMatches, cornersInScene[3] + Point2f(refImageCol, 0),
-                cornersInScene[0] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
+        cv::perspectiveTransform( cornersInReference, corInScene, H);
+
+        // Draw lines between the corners of the spotted object (reference) in the scene
+        cv::line( imageOfMatches, corInScene[0] + Point2f(refImageCol, 0),
+                corInScene[1] + Point2f(refImageCol, 0), Scalar(0, 255, 0), 4 );
+        cv::line( imageOfMatches, corInScene[1] + Point2f(refImageCol, 0),
+                corInScene[2] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
+        cv::line( imageOfMatches, corInScene[2] + Point2f(refImageCol, 0),
+                corInScene[3] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
+        cv::line( imageOfMatches, corInScene[3] + Point2f(refImageCol, 0),
+                corInScene[0] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
     }
-    catch (const std::exception& e) {
+    else {
         ROS_INFO("Can't draw matches");
     }
     
