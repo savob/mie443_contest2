@@ -255,7 +255,7 @@ void ImagePipeline::loadImage(std::string fileLocation, bool printMessage) {
     img = cv::imread(fileLocation, 1);
     isValid = true;
 
-    if (printMessage) ROS_INFO("Image loaded from \"%s\" into video feed.", fileLocation.c_str());
+    if (printMessage) ROS_INFO("Image loaded from into video feed.\n\"%s\"", fileLocation.c_str());
 }
 
 cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &tagImage, std::vector<cv::DMatch> &matches, 
