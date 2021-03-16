@@ -38,6 +38,11 @@ int main(int argc, char** argv) {
 
         // Vision stuff past here, no touchy
         
+        // Decide to include vision test or not (comment the #define in the image header) 
+#ifdef TESTING_VISION_SAMPLES 
+
+        ROS_INFO("\n\nRUNNING VISION TEST\n(will terminate once complete)\n");
+
         // Test parameters
         std::string testFileFolder = "/home/brobot/catkin_ws/src/mie443_contest2/testpics/";
         bool printInnerWorks = true;
@@ -81,6 +86,9 @@ int main(int argc, char** argv) {
         }
 
         return 0; // Only run this all once
+#else
+        ROS_INFO_ONCE("\n\nNOT RUNNING VISION TEST\n\n"); // Inform user that vision test is no being run
+#endif
         
         // End of vision stuff
 
