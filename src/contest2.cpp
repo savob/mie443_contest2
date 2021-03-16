@@ -6,13 +6,14 @@
 #include <cmath>
 #include <algorithm>
 
-
-double loopCost(int movePlan[], double adjMatrix[]) {
+double loopCost(double **adjMatrix, std::vector<int> movePlan) {
+    // Note, adjMatrix has been passed in by reference so any changes to it will 
+    // be reflected in the variable used when calling this
     double cost = 0;
     for(int i = 1; i < movePlan.size(); ++i) {
-        cost += adjMatrix[movePlan[i]][moveplan[i-1]];
+        cost += (adjMatrix[movePlan[i]])[movePlan[i-1]];
     }
-    cost += adjMatrix[movePlan.end()][movePlan.begin()];
+    cost += adjMatrix[movePlan[movePlan.size() - 1]][movePlan[0]];
     return cost;
 }
 
@@ -69,15 +70,20 @@ int main(int argc, char** argv) {
         }
     }
 
-    int movePlan[tour_points];
+    // Initialize vector as a set of numbers from 0 to the number of tour points
+    std::vector<int> movePlan(tour_points);
     for(int i = 0; i < tour_points; ++i) {
         movePlan[i] = i;
     }
 
-    double bestScore = loopCost(movePlan, adjMatrix);
-    int bestRoute = movePlan;
+    // Prepare pointer to pass adjMatrix
+    double *temp[tour_points];
+    for(int i = 0; i < tour_points; ++i) temp[i] = adjMatrix[i];
+
+    double bestScore = loopCost(temp, movePlan);
+    std::vector<int> bestRoute = movePlan;
     while(std::next_permutation(movePlan.begin() + 1, movePlan.end())) {
-        double s = loopCost(movePlan, adjMatrix);
+        double s = loopCost(temp, movePlan);
         if(s < bestScore) {
             bestScore = s;
             bestRoute = movePlan;
