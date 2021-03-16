@@ -2,19 +2,20 @@
 #include <navigation.h>
 #include <robot_pose.h>
 #include <imagePipeline.h>
+#include <dirent.h>         // Used for reading in the test files
 #include <cmath>
 #include <algorithm>
 
-
-
-double loopCost(int movePlan[], double adjMatrix[]) {
-        double cost = 0;
-        for(int i = 1; i < movePlan.size(); ++i) {
-            cost += adjMatrix[movePlan[i]][moveplan[i-1]];
-        }
-        cost += adjMatrix[movePlan.end()][movePlan.begin()];
-        return cost;
+double loopCost(double **adjMatrix, std::vector<int> movePlan) {
+    // Note, adjMatrix has been passed in by reference so any changes to it will 
+    // be reflected in the variable used when calling this
+    double cost = 0;
+    for(int i = 1; i < movePlan.size(); ++i) {
+        cost += (adjMatrix[movePlan[i]])[movePlan[i-1]];
     }
+    cost += adjMatrix[movePlan[movePlan.size() - 1]][movePlan[0]];
+    return cost;
+}
 
 int main(int argc, char** argv) {
     // Setup ROS.
@@ -30,15 +31,15 @@ int main(int argc, char** argv) {
         return -1;
     }
     else {
-        ROS_INFO("Box coordinates:");
+        ROS_INFO("Box coordinates loaded successfully:");
 
         for(int i = 0; i < boxes.coords.size(); ++i) {
-            std::cout << i << "\tx: " << boxes.coords[i][0] << " y: " << boxes.coords[i][1] << " z: " 
+            std::cout << i << "\tx: " << boxes.coords[i][0] << "\ty: " << boxes.coords[i][1] << "\tz: " 
                     << boxes.coords[i][2] << std::endl;
         }
     }
 
-    // Initialize image objectand subscriber.
+    // Initialize image object and subscriber.
     ImagePipeline imagePipeline(n);
     // Execute strategy.
 
@@ -69,15 +70,20 @@ int main(int argc, char** argv) {
         }
     }
 
-    int movePlan[tour_points];
+    // Initialize vector as a set of numbers from 0 to the number of tour points
+    std::vector<int> movePlan(tour_points);
     for(int i = 0; i < tour_points; ++i) {
         movePlan[i] = i;
     }
 
-    double bestScore = loopCost(movePlan, adjMatrix);
-    int bestRoute = movePlan;
+    // Prepare pointer to pass adjMatrix
+    double *temp[tour_points];
+    for(int i = 0; i < tour_points; ++i) temp[i] = adjMatrix[i];
+
+    double bestScore = loopCost(temp, movePlan);
+    std::vector<int> bestRoute = movePlan;
     while(std::next_permutation(movePlan.begin() + 1, movePlan.end())) {
-        double s = loopCost(movePlan, adjMatrix);
+        double s = loopCost(temp, movePlan);
         if(s < bestScore) {
             bestScore = s;
             bestRoute = movePlan;
@@ -92,16 +98,74 @@ int main(int argc, char** argv) {
 
 
         // Vision stuff past here, no touchy
-
-        // Location of test file (needs to be absolute)
-        //char testFile[] = "/home/brobot/catkin_ws/src/mie443_contest2/testpics/crab5.png";
-        //imagePipeline.loadImage(testFile);
         
-        //imagePipeline.getTemplateID(boxes);
+        // Decide to include vision test or not (comment the #define in the image header) 
+#ifdef TESTING_VISION_SAMPLES 
 
+        ROS_INFO("\n\nRUNNING VISION TEST\n(will terminate once complete)\n");
+
+        // Test parameters
+        std::string testFileFolder = "/home/brobot/catkin_ws/src/mie443_contest2/testpics/";
+        bool printInnerWorks = true;
+        std::string searchTerm = "dog";
+        // Leave as "" for all files in folder (not recommended since too many consecutive searches results in errors)
+
+        // Load in all test files
+        std::vector<std::string> fileNames;
+
+        DIR *dr;
+        struct dirent *en;
+        dr = opendir(testFileFolder.c_str()); // Open directory
+        if (dr) {
+            while ((en = readdir(dr)) != NULL) {
+                std::string temp = en->d_name; // Grab file names
+
+                // Add files that end in PNG and contain search term
+                if (temp.find(".png") != std::string::npos) {
+                    if (temp.find(searchTerm) != std::string::npos) {
+                        fileNames.push_back(temp); 
+                    }
+                }
+            }
+            closedir(dr); // Close directory
+        }
+
+        std::sort (fileNames.begin(), fileNames.end()); // Sort files alphabetically
+        int result[fileNames.size()];
+
+        // Go through each test file to ID
+        for (int i = 0; i < fileNames.size(); i++) {
+            std::string testFile = testFileFolder + fileNames[i];
+            imagePipeline.loadImage(testFile);
+            result[i] = imagePipeline.getTemplateID(boxes, printInnerWorks);
+        }
+
+        // Print result summary
+        printf("\nResults of analysis, ID# and file name.\n");
+        for (int i = 0; i < fileNames.size(); i++) {
+            printf("ID %2d: %s\n", result[i], fileNames[i].c_str());
+        }
+
+        return 0; // Only run this all once
+#else
+        ROS_INFO_ONCE("\n\nNOT RUNNING VISION TEST\n\n"); // Inform user that vision test is not being run
+
+        int ID = imagePipeline.getTemplateID(boxes, false); // Check if there is something present, do not print internals
+        // NOTE: DO NOT CALL IN RAPID SUCCESSION
+        // TODO: See if this is related to period between calls or quantity of calls
+        if (ID == -1) {
+            // Handle error... or don't
+        }
+        else {
+            // Completed scan without event
+            // 0 for blank/nothing to spot
+            // >0 matches template ID spotted
+        }
+#endif
+        
         // End of vision stuff
 
-        ros::Duration(0.01).sleep(); // Two second sleep per step
+        ros::Duration(1).sleep(); // Two second sleep per step
     }
     return 0;
 }
