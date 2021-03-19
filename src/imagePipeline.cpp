@@ -101,16 +101,24 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
     }
 
     float confidence[boxes.templates.size()];
-    for (int tagID = 0; tagID < boxes.templates.size(); tagID++) {
+    for (int tagID = 11; tagID < boxes.templates.size(); tagID++) {
+        img = imgBackup.clone(); // Restore original preprocessed image
+
         // File for current tag check
-        Mat tagImageRaw = boxes.templates[tagID];
-        Mat tagImage = tagImageRaw;
+        Mat tagImage = boxes.templates[tagID];
 
         if (tagID == 11) {
             // Handle pepper
+            double brightness = -100.0;
+            resize(tagImage,tagImage, Size(500,400));
+            tagImage.convertTo(tagImage, -1, 1, brightness);
+            //tagImage = tagImage.clone();
+
+            cv::imshow("Processed tag. Press any key to continue.", tagImage);
+            cv::waitKey(500);
         }
 
-        GaussianBlur(tagImageRaw, tagImage, Size( 3, 3), 0, 0); // Add blur to aid feature matching
+        GaussianBlur(tagImage, tagImage, Size( 3, 3), 0, 0); // Add blur to aid feature matching
         //cv::imshow("Tag as used", tagImage);
 
         std::vector<DMatch> goodMatches;
