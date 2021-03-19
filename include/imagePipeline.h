@@ -26,6 +26,12 @@ class ImagePipeline {
         uint8_t skyVal = 178; // RGB value of the skybox
         const uint8_t removeVal = 0; // Value used to overwrite pixels we don't care for
 
+        // Checks if the lines plotted by the four corners don't intersect
+        bool checkTangledBox(std::vector<cv::Point2f> corners);
+
+        // See if the test point lies above the line between points A and B
+        bool checkAbove(cv::Point2f test, cv::Point2f a, cv::Point2f b);
+
         // Used to produce an output of the reference image in the scene based on existing matches and points
         cv::Mat drawSceneMatches(cv::Mat &scene, cv::Mat &refImage, std::vector<cv::DMatch> &matches, 
             std::vector<cv::KeyPoint> &keyPointsRef, std::vector<cv::KeyPoint> &keyPointsScene);

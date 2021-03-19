@@ -137,7 +137,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
             }
 
             // Determine transformation matrix of reference to scene pixels
-            Mat H = findHomography(refPoints, scenePoints, RANSAC );
+            Mat H = findHomography(refPoints, scenePoints, RANSAC);
 
             // Check if there is a possible transform
             if (H.empty()) {
@@ -164,13 +164,16 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
                 // Apply transform to reference corners to transform into scene bounds
                 cv::perspectiveTransform( cornersInReference, corInScene, H);
                 
-                // Calculate area of the region
-                // (1/2) * {(x1y2 + x2y3 + x3y4 + x4y1) - (x2y1 + x3y2 + x4y3 + x1y4)}
-                area = corInScene[0].x * corInScene[1].y + corInScene[1].x * corInScene[2].y +
-                    corInScene[2].x * corInScene[3].y + corInScene[3].x * corInScene[0].y; 
-                area = area - (corInScene[1].x * corInScene[0].y + corInScene[2].x * corInScene[1].y +
-                    corInScene[3].x * corInScene[2].y + corInScene[0].x * corInScene[3].y);
-                area = area / 2;
+                // Check if the corners are not "tangled" before calculating area (forming a "bow" shape (invalid))
+                if (checkTangledBox(corInScene) == false) {
+                    // Calculate area of the region
+                    // (1/2) * [(x1y2 + x2y3 + x3y4 + x4y1) - (x2y1 + x3y2 + x4y3 + x1y4)]
+                    area = corInScene[0].x * corInScene[1].y + corInScene[1].x * corInScene[2].y +
+                        corInScene[2].x * corInScene[3].y + corInScene[3].x * corInScene[0].y; 
+                    area = area - (corInScene[1].x * corInScene[0].y + corInScene[2].x * corInScene[1].y +
+                        corInScene[3].x * corInScene[2].y + corInScene[0].x * corInScene[3].y);
+                    area = area / 2;
+                }
             }
         }
 
@@ -258,7 +261,7 @@ void ImagePipeline::loadImage(std::string fileLocation, bool printMessage) {
     img = cv::imread(fileLocation, 1);
     isValid = true;
 
-    if (printMessage) ROS_INFO("Image loaded from into video feed.\n\"%s\"", fileLocation.c_str());
+    if (printMessage) ROS_INFO("Image loaded from into video feed.\n\t\"%s\"", fileLocation.c_str());
 }
 
 cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &tagImage, std::vector<cv::DMatch> &matches, 
@@ -311,4 +314,31 @@ cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &tagImage, std::
     }
     
     return imageOfMatches;
+}
+
+bool ImagePipeline::checkTangledBox(std::vector<cv::Point2f> corners) {
+    
+    // Check that line 14 does not cross 23
+    bool tempA = checkAbove(corners[0],corners[1],corners[2]);
+    bool tempB = checkAbove(corners[3],corners[1],corners[2]);
+    bool result = tempA == tempB; // Store if both points fall on the same side (not tangled)
+
+    // Check that line 12 does not cross 34
+    tempA = checkAbove(corners[0],corners[3],corners[2]);
+    tempB = checkAbove(corners[1],corners[3],corners[2]);
+    result = result && (tempA == tempB); // Update result to ensure no sets of lines intersect
+
+    return !result; // Return true if the system IS tangled
+}
+
+bool ImagePipeline::checkAbove(cv::Point2f test, cv::Point2f a, cv::Point2f b) {
+    // Define line between a and b
+    float gradient = (a.y - b.y) / (a.x - b.x);
+
+    // Linearly extrapolate line between a and b to test point
+    float dx = test.x - a.x;
+    float estimateY = a.y + dx * gradient;
+
+    // Return if the point lies above the line or not
+    return test.y > estimateY;
 }
