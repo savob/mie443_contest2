@@ -35,8 +35,8 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
         return determinedId;
     }
 
-    //  ============================================================
-    // Preprocesing
+    // ============================================================
+    // Preprocesing of incoming image
     img = img(cv::Rect(0,0,640,420)); // Crop out the constant lip of the rover at the bottom
 
     // Black out coloured pixels (currently only walls)
@@ -60,36 +60,34 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
         }
     }
 
+    // Convert image from RGB to greyscale space 
+    // This should reduce memory usage and computation time
+    cv::cvtColor(img, img, cv::COLOR_RGBA2GRAY, 0);
+
     // Remove sky
     // The sky is a uniform colour (in our sim 178, 178, 178) and always starts from the top until it is
     // interrupted by an object, none of which have pixels of that value along the top
 
     // skyVal is defined in the header, but it can be dynamically set before this is desired.
-
+    pixelPtr = (uint8_t*)img.data; // Update the pointer before this loop
     for (int j = 0; j < img.cols; j++) {
         for (int i = 0; i < img.rows; i++) {
             // Go column by column from top to bottom until no longer in the sky
 
             // Check if its greyscale (R=B=G), blank them if they aren't
-            if (pixelPtr[i*img.cols*cn + j*cn + 0] != skyVal) break; // Hit an object, go to next column
+            if (pixelPtr[i*img.cols + j] != skyVal) break; // Hit an object, go to next column
             else {
-                pixelPtr[i*img.cols*cn + j*cn + 0] = removeVal;
-                pixelPtr[i*img.cols*cn + j*cn + 1] = removeVal;
-                pixelPtr[i*img.cols*cn + j*cn + 2] = removeVal;
+                pixelPtr[i*img.cols + j] = removeVal;
             } 
         }
     }
-
-    using namespace cv;
-    using namespace cv::xfeatures2d;
-
-    // Convert image from RGB to greyscale space
-    cv::cvtColor(img, img, cv::COLOR_RGBA2GRAY, 0);
 
     //cv::imshow("Processed view. Press any key to continue.", img); // Show result of preprocessing
 
     // ============================================================
     // Setup scan of image
+    using namespace cv;
+    using namespace cv::xfeatures2d;
 
     // Setup the SURF detector for features in images and associated data
     Ptr<SURF> detector = SURF::create( minHessian ); // Defined in header
