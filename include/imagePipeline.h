@@ -14,7 +14,7 @@
 #include "opencv2/calib3d.hpp"
 #include "opencv2/imgproc.hpp"
 
-// #define TESTING_VISION_SAMPLES  // Run test code for vision (go through test files)
+ #define TESTING_VISION_SAMPLES  // Run test code for vision (go through test files)
 // Comment above out if not testing vision
 
 class ImagePipeline {

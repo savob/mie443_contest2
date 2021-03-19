@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
         // Test parameters
         std::string testFileFolder = "/home/brobot/catkin_ws/src/mie443_contest2/testpics/";
         bool printInnerWorks = true;
-        std::string searchTerm = "spot";
+        std::string searchTerm = "blank";
         // Leave as "" for all files in folder (not recommended since too many consecutive searches results in errors)
 
         // Load in all test files
