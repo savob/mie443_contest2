@@ -100,8 +100,13 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
         printf("\tScene has %d keypoints\n", (int) keyPointsScene.size());
     }
 
+    // Find the most the ID and confidence of the two highest rated candidates
+    float maxConfidence = 0.0, secondConfidence = 0.0;
+    uint8_t maxID = 0;
     float confidence[boxes.templates.size()];
-    for (int tagID = 11; tagID < boxes.templates.size(); tagID++) {
+    Mat bestTag; // Stores the best matched tag for display purposes
+
+    for (int tagID = 0; tagID < boxes.templates.size(); tagID++) {
         img = imgBackup.clone(); // Restore original preprocessed image
 
         // File for current tag check
@@ -113,9 +118,6 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
             resize(tagImage,tagImage, Size(500,400));
             tagImage.convertTo(tagImage, -1, 1, brightness);
             //tagImage = tagImage.clone();
-
-            cv::imshow("Processed tag. Press any key to continue.", tagImage);
-            cv::waitKey(500);
         }
 
         GaussianBlur(tagImage, tagImage, Size( 3, 3), 0, 0); // Add blur to aid feature matching
@@ -125,13 +127,13 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
 
         searchInScene(tagImage, descriptorsScene, keyPointsObject, goodMatches, detector);
 
-        confidence[tagID] = (float)goodMatches.size() / (float)keyPointsObject.size();
+        float confidence = (float)goodMatches.size() / (float)keyPointsObject.size();
 
         // Find object area in scene if there is a possibility of it being present
 
         float area = 0;
 
-        if (confidence[tagID] > reqConfMinimum) {
+        if (confidence > reqConfMinimum) {
             // Localize the object
             std::vector<Point2f> refPoints;
             std::vector<Point2f> scenePoints;
@@ -149,7 +151,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
                 // Failed to find a transform from reference to scene
 
                 ROS_WARN("Unable to transform perspective using reference %d.", tagID + 1);
-                confidence[tagID] = 0;
+                confidence = 0;
 
                 // Code to try and interate until resolved
                 //tagID--; 
@@ -179,34 +181,29 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
             }
         }
 
-        if (area <= reqMinArea) confidence[tagID] = 0; // Nullify confidence if it isn't present
-        else confidence[tagID] = confidence[tagID] * area * areaConfidenceFactor; // Add area to confidence
+        if (area <= reqMinArea) confidence = 0; // Nullify confidence if it isn't present
+        else confidence = confidence * area * areaConfidenceFactor; // Add area to confidence
         // Area is added to prefer objects that are closer to rover but might have some of their features out of
         // frame, resulting in a lower "confidence" than a fully visible, but futher object in the background
 
         if (showInternals) {
             printf("Template %2d - Confidence %6.2f%% - KP %4d / %4d - Area %6.0f\n", 
-                tagID + 1, confidence[tagID] * 100.0, (int)goodMatches.size(), (int) keyPointsObject.size(), area);
+                tagID + 1, confidence * 100.0, (int)goodMatches.size(), (int) keyPointsObject.size(), area);
         }
-    }
-    
-    // Find the most the ID and confidence of the two highest rated candidates
-    float maxConfidence = 0.0, secondConfidence = 0.0;
-    uint8_t maxID = 0, secondID = 0;
 
-    for (uint8_t i = 0; i < boxes.templates.size(); i++) {
-        float curConfidence = confidence[i];
-
-        if (curConfidence > maxConfidence) {
+        // See how this compares to previous cases
+        if (confidence > maxConfidence) {
+            // New best
             secondConfidence = maxConfidence;
-            maxConfidence = curConfidence;
+            maxConfidence = confidence;
 
-            secondID = maxID;
-            maxID = i;
+            // Record values needed outside the loop
+            maxID = tagID;
+            bestTag = tagImage.clone();
         }
-        else if (curConfidence > secondConfidence) {
-            secondConfidence =  curConfidence;
-            secondID = i;
+        else if (confidence > secondConfidence) {
+            // Record second place confidence for ratio comparison later
+            secondConfidence = confidence;
         }
     }
     
@@ -226,10 +223,10 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
 
             // Redo winning search
             std::vector<DMatch> goodMatches;
-            searchInScene(boxes.templates[maxID], descriptorsScene, keyPointsObject, goodMatches, detector);
+            searchInScene(bestTag, descriptorsScene, keyPointsObject, goodMatches, detector);
 
             // Show resulting matches
-            Mat imgOfMatches = ImagePipeline::drawSceneMatches(img, boxes.templates[maxID], goodMatches, keyPointsObject, keyPointsScene);
+            Mat imgOfMatches = ImagePipeline::drawSceneMatches(img, bestTag, goodMatches, keyPointsObject, keyPointsScene);
             imshow("Selected match", imgOfMatches);
 
             cv::waitKey(250); // Wait until key pressed
