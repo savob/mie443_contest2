@@ -141,13 +141,8 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
             // Check if there is a possible transform
             if (H.empty()) {
                 // Failed to find a transform from reference to scene
-
                 ROS_WARN("Unable to transform perspective using reference %d.", tagID + 1);
-                confidence = 0;
-
-                // Code to try and interate until resolved
-                //tagID--; 
-                //continue;
+                confidence = 0; // It's a bad match
             }
             else {
                 // Tranform from refence image to scene is possible
