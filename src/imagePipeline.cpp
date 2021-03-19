@@ -84,7 +84,6 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
 
     // Convert image from RGB to greyscale space
     cv::cvtColor(img, img, cv::COLOR_RGBA2GRAY, 0);
-    const Mat imgBackup = img; // Used as a backup for the preprocessed input so additional changes can be done to it case by case
 
     //cv::imshow("Processed view. Press any key to continue.", img);
 
@@ -107,7 +106,6 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
     Mat bestTag; // Stores the best matched tag for display purposes
 
     for (int tagID = 0; tagID < boxes.templates.size(); tagID++) {
-        img = imgBackup.clone(); // Restore original preprocessed image
 
         // File for current tag check
         Mat tagImage = boxes.templates[tagID];
