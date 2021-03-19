@@ -148,7 +148,7 @@ int main(int argc, char** argv) {
 
         return 0; // Only run this all once
 #else
-        ROS_INFO_ONCE("\n\nNOT RUNNING VISION TEST\n\n"); // Inform user that vision test is not being run
+        ROS_INFO_ONCE("\n\nNOT RUNNING VISION TEST\nRegular vision system operation will commence.\n");
 
         int ID = imagePipeline.getTemplateID(boxes, false); // Check if there is something present, do not print internals
         // NOTE: DO NOT CALL IN RAPID SUCCESSION
@@ -162,10 +162,9 @@ int main(int argc, char** argv) {
             // >0 matches template ID spotted
         }
 #endif
-        
         // End of vision stuff
 
-        ros::Duration(1).sleep(); // Two second sleep per step
+        ros::Duration(0.1).sleep(); // Two second sleep per step
     }
     return 0;
 }

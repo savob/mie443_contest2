@@ -209,10 +209,10 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
     else if ((maxConfidence > reqConfMinimum) && ((maxConfidence / secondConfidence) > reqConfRatio)) {
         determinedId = maxID + 1; // Add one to match file names and to allow 0 to be used as a fail code
 
-        if (showInternals) {
-            ROS_INFO("Image contains %d, %.2f%% (%.2f) confidence", determinedId,
-                maxConfidence * 100.0, (maxConfidence / secondConfidence));
+        ROS_INFO("Image contains %d, %.2f%% (%.2f) confidence", determinedId,
+            maxConfidence * 100.0, (maxConfidence / secondConfidence));
 
+        if (showInternals) {
             // Redo winning search
             std::vector<DMatch> goodMatches;
             searchInScene(bestTag, descriptorsScene, keyPointsObject, goodMatches, detector);
@@ -306,7 +306,7 @@ cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &tagImage, std::
                 corInScene[0] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
     }
     else {
-        ROS_INFO("Can't draw matches. Corners cannot be transformed.");
+        ROS_WARN("Can't draw matches. Corners cannot be transformed.");
     }
     
     return imageOfMatches;
