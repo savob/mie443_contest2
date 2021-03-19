@@ -111,14 +111,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
 
         // File for current tag check
         Mat tagImage = boxes.templates[tagID];
-
-        if (tagID == 11) {
-            // Handle pepper
-            double brightness = -100.0;
-            resize(tagImage,tagImage, Size(500,400));
-            tagImage.convertTo(tagImage, -1, 1, brightness);
-            //tagImage = tagImage.clone();
-        }
+        resize(tagImage,tagImage, Size(500,400)); // Resize to match map aspect ratio
 
         GaussianBlur(tagImage, tagImage, Size( 3, 3), 0, 0); // Add blur to aid feature matching
         //cv::imshow("Tag as used", tagImage);
