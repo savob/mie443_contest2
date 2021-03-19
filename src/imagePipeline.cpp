@@ -35,6 +35,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
         return determinedId;
     }
 
+    //  ============================================================
     // Preprocesing
     img = img(cv::Rect(0,0,640,420)); // Crop out the constant lip of the rover at the bottom
 
@@ -85,53 +86,53 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
     // Convert image from RGB to greyscale space
     cv::cvtColor(img, img, cv::COLOR_RGBA2GRAY, 0);
 
-    //cv::imshow("Processed view. Press any key to continue.", img);
+    //cv::imshow("Processed view. Press any key to continue.", img); // Show result of preprocessing
 
-    // Detect the keypoints using SURF Detector, compute the descriptors
+    // ============================================================
+    // Setup scan of image
+
+    // Setup the SURF detector for features in images and associated data
     Ptr<SURF> detector = SURF::create( minHessian ); // Defined in header
     std::vector<KeyPoint> keyPointsObject, keyPointsScene;
     Mat descriptorsScene;
 
-    // Make features for the scene
+    // Determine features for the scene before looping through options
     detector->detectAndCompute( img, noArray(), keyPointsScene, descriptorsScene );
-
     if (showInternals) {
         printf("\tScene has %d keypoints\n", (int) keyPointsScene.size());
     }
 
-    // Find the most the ID and confidence of the two highest rated candidates
+    // Find the ID and confidence levels of the two highest rated candidates
     float maxConfidence = 0.0, secondConfidence = 0.0;
     uint8_t maxID = 0;
-    float confidence[boxes.templates.size()];
-    Mat bestTag; // Stores the best matched tag for display purposes
+    Mat bestTag; // Stores the best matched reference tag for display purposes
 
+    // ============================================================
+    // Loop through all possible tags
     for (int tagID = 0; tagID < boxes.templates.size(); tagID++) {
 
-        // File for current tag check
+        // Load file to refer to for current tag check and preprocess as needed
         Mat tagImage = boxes.templates[tagID];
-        resize(tagImage,tagImage, Size(500,400)); // Resize to match map aspect ratio
+        resize(tagImage,tagImage, Size(500,400));               // Resize to roughly match aspect ratio on boxes
+        GaussianBlur(tagImage, tagImage, Size( 3, 3), 0, 0);    // Add blur to aid feature matching
+        //cv::imshow("Tag as used", tagImage); // Show image used in search
 
-        GaussianBlur(tagImage, tagImage, Size( 3, 3), 0, 0); // Add blur to aid feature matching
-        //cv::imshow("Tag as used", tagImage);
-
+        // See what portion of features from the reference are matched in the scene
         std::vector<DMatch> goodMatches;
-
         searchInScene(tagImage, descriptorsScene, keyPointsObject, goodMatches, detector);
-
         float confidence = (float)goodMatches.size() / (float)keyPointsObject.size();
 
-        // Find object area in scene if there is a possibility of it being present
-
-        float area = 0;
-
+        // ============================================================
+        // Investigate futher if initial confidence is good
+        float area = 0; // Area object takes up in scene (pixels)
         if (confidence > reqConfMinimum) {
             // Localize the object
             std::vector<Point2f> refPoints;
             std::vector<Point2f> scenePoints;
-            for( size_t i = 0; i < goodMatches.size(); i++ ) {
+            for(int i = 0; i < goodMatches.size(); i++) {
                 // Get the keypoints from the good matches
-                refPoints.push_back( keyPointsObject[ goodMatches[i].queryIdx ].pt );
-                scenePoints.push_back( keyPointsScene[ goodMatches[i].trainIdx ].pt );
+                refPoints.push_back(keyPointsObject[goodMatches[i].queryIdx].pt);
+                scenePoints.push_back(keyPointsScene[goodMatches[i].trainIdx].pt);
             }
 
             // Determine transformation matrix of reference to scene pixels
@@ -149,7 +150,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
                 //continue;
             }
             else {
-                // Tranform from refence to scene is possible
+                // Tranform from refence image to scene is possible
 
                 // Get the corners from the reference image
                 std::vector<Point2f> cornersInReference(4);
@@ -174,6 +175,9 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
                 }
             }
         }
+
+        // ============================================================
+        // Look to record this match if it's worthy
 
         if (area <= reqMinArea) confidence = 0; // Nullify confidence if it isn't present
         else confidence = confidence * area * areaConfidenceFactor; // Add area to confidence
@@ -201,15 +205,16 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
         }
     }
     
-    // See if it is worth making a conclusion
-    determinedId = 0;
+    // ============================================================
+    // Process the results of the scan
+    determinedId = 0; // Default (inconclusive scan, but at least no error!)
 
     if (maxConfidence < reqConfMinimum) {
         // If there is no satisfactory option 
         ROS_INFO("Failed to find a match.");
     }
     else if ((maxConfidence > reqConfMinimum) && ((maxConfidence / secondConfidence) > reqConfRatio)) {
-        determinedId = maxID + 1;
+        determinedId = maxID + 1; // Add one to match file names and to allow 0 to be used as a fail code
 
         if (showInternals) {
             ROS_INFO("Image contains %d, %.2f%% (%.2f) confidence", determinedId,
@@ -223,7 +228,7 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
             Mat imgOfMatches = ImagePipeline::drawSceneMatches(img, bestTag, goodMatches, keyPointsObject, keyPointsScene);
             imshow("Selected match", imgOfMatches);
 
-            cv::waitKey(250); // Wait until key pressed
+            cv::waitKey(250); // Wait until any key is pressed or 250ms pass
         }
     }
 
@@ -245,8 +250,8 @@ void ImagePipeline::searchInScene(cv::Mat &tagImage, cv::Mat &descriptorsScene, 
     std::vector< std::vector<DMatch> > knn_matches;
     matcher->knnMatch( descriptors_object, descriptorsScene, knn_matches, 2 );
 
-    //-- Filter matches using the Lowe's ratio test
-    const float ratio_thresh = 0.75f;
+    // Filter matches using the Lowe's ratio test
+    const float ratio_thresh = 0.75;
     for (size_t i = 0; i < knn_matches.size(); i++) {
         if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance) {
             goodMatches.push_back(knn_matches[i][0]);
@@ -267,15 +272,15 @@ cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &tagImage, std::
     
     using namespace cv;
 
-    //-- Draw matches
+    // Draw matches
     Mat imageOfMatches; // Image with matches illustrated
     drawMatches(tagImage, keyPointsRef, scene, keyPointsScene, matches, imageOfMatches, Scalar::all(-1),
                     Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-    //-- Localize the object
+    // Localize the object
     std::vector<Point2f> refPoints;
     std::vector<Point2f> scenePoints;
     for( size_t i = 0; i < matches.size(); i++ ) {
-        //-- Get the keypoints from the good matches
+        // Get the keypoints from the good matches
         refPoints.push_back( keyPointsRef[ matches[i].queryIdx ].pt );
         scenePoints.push_back( keyPointsScene[ matches[i].trainIdx ].pt );
     }
@@ -287,7 +292,7 @@ cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &tagImage, std::
 
         float refImageCol = (float)tagImage.cols;
 
-        //-- Get the corners from the image_1 ( the object to be "detected" )
+        // Get the corners from the reference image (the object to be "detected")
         std::vector<Point2f> cornersInReference(4);
         cornersInReference[0] = Point2f(0, 0);
         cornersInReference[1] = Point2f( refImageCol, 0 );
@@ -308,7 +313,7 @@ cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &tagImage, std::
                 corInScene[0] + Point2f(refImageCol, 0), Scalar( 0, 255, 0), 4 );
     }
     else {
-        ROS_INFO("Can't draw matches");
+        ROS_INFO("Can't draw matches. Corners cannot be transformed.");
     }
     
     return imageOfMatches;
@@ -316,7 +321,7 @@ cv::Mat ImagePipeline::drawSceneMatches(cv::Mat &scene, cv::Mat &tagImage, std::
 
 bool ImagePipeline::checkTangledBox(std::vector<cv::Point2f> corners) {
     
-    // Check that line 14 does not cross 23
+    // Check that line between 1 and 4 does not cross 23
     bool tempA = checkAbove(corners[0],corners[1],corners[2]);
     bool tempB = checkAbove(corners[3],corners[1],corners[2]);
     bool result = tempA == tempB; // Store if both points fall on the same side (not tangled)
