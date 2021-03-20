@@ -55,6 +55,6 @@ void writeLog(Boxes boxList, std::vector<int> movePlan, std::vector<int> boxIDs)
     }
     else {
         // File failed to open
-        ROS_FATAL("\n\nUnable to open output file.\n\n");
+        ROS_FATAL("\n\nUnable to open output file.\n\"%s\"\n", logfile);
     }
 }
