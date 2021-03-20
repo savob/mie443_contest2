@@ -27,13 +27,15 @@ void writeLog(Boxes boxList, std::vector<int> movePlan, std::vector<int> boxIDs)
             outputFile << tagText;
 
             // Record duplicate status
+            char dupText[7];
             if (alreadyTagged[boxIDs[i]] == true) {
-                outputFile << "dup - ";
+                sprintf(dupText, "dup - ");
             }
             else {
-                outputFile << "new - ";
+                sprintf(dupText, "new - ");
                 alreadyTagged[boxIDs[i]] = true; // Mark down it has already been listed
             }
+            outputFile << dupText;
 
             // Record coordinates for the stop from move list
             std::vector<float> curCoords = boxList.coords[movePlan[i]];
@@ -44,7 +46,7 @@ void writeLog(Boxes boxList, std::vector<int> movePlan, std::vector<int> boxIDs)
 
             outputFile << "\n"; // Move to next line
 
-            std::cout << tagText << coordText << "\n";
+            std::cout << tagText << dupText << coordText << "\n";
         }
 
         outputFile.close(); // Must close file once complete
