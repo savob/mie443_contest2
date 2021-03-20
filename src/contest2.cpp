@@ -5,6 +5,7 @@
 #include <dirent.h>         // Used for reading in the test files
 #include <cmath>
 #include <algorithm>
+#include "file_write.h"
 
 double loopCost(double **adjMatrix, std::vector<int> movePlan) {
     // Note, adjMatrix has been passed in by reference so any changes to it will 
@@ -90,6 +91,8 @@ int main(int argc, char** argv) {
         }
     }
 
+    std::vector<int> boxIDs(boxes.coords.size()); // Recoding IDs of each box
+
     while(ros::ok()) {
         ros::spinOnce();
         /***YOUR CODE HERE***/
@@ -98,7 +101,13 @@ int main(int argc, char** argv) {
 
 
         // Vision stuff past here, no touchy
-        
+           
+#ifdef FILE_WRITE_TEST
+        for (int i = 0; i < boxes.coords.size(); i++) boxIDs[i] = i;
+        writeLog(boxes, movePlan, boxIDs);
+        return 0;
+#endif
+
         // Decide to include vision test or not (comment the #define in the image header) 
 #ifdef TESTING_VISION_SAMPLES 
 
