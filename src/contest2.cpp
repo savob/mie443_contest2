@@ -99,5 +99,7 @@ int main(int argc, char** argv) {
     ROS_WARN("\nTIME'S UP! (%d seconds)\n RECORDING OUTPUT AND TERMINATING.\n", timeLimit);
 
     writeLog(boxes, bestRoute, boxIDs); // Write results before closing
+
+    ROS_FATAL("Ending now. Goodbye.");
     return 0;
 }
