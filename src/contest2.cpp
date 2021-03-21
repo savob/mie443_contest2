@@ -2,11 +2,11 @@
 #include <navigation.h>
 #include <robot_pose.h>
 #include <imagePipeline.h>
-#include <dirent.h>         // Used for reading in the test files
 #include <cmath>
 #include <algorithm>
 #include "file_write.h"
 #include <time.h>
+#include "tests.h"
 
 double loopCost(double **adjMatrix, std::vector<int> movePlan) {
     // Note, adjMatrix has been passed in by reference so any changes to it will 
@@ -109,62 +109,17 @@ int main(int argc, char** argv) {
         // Vision stuff past here, no touchy
            
 #ifdef FILE_WRITE_TEST
-        ROS_WARN("\n\nRUNNING FILE OUTPUT TEST\n(will terminate once complete)\n");
-        for (int i = 0; i < boxes.coords.size(); i++) boxIDs[i] = i / 2; // i/2 to get duplicates
-        writeLog(boxes, movePlan, boxIDs);
+        fileWriteTest(boxes, movePlan, false);
         return 0;
 #endif
 
-        // Decide to include vision test or not (comment the #define in the image header) 
-#ifdef TESTING_VISION_SAMPLES 
-
-        ROS_WARN("\n\nRUNNING VISION TEST\n(will terminate once complete)\n");
-
-        // Test parameters
-        std::string testFileFolder = "/home/brobot/catkin_ws/src/mie443_contest2/testpics/";
-        bool printInnerWorks = true;
-        std::string searchTerm = "blank";
-        // Leave as "" for all files in folder (not recommended since too many consecutive searches results in errors)
-
-        // Load in all test files
-        std::vector<std::string> fileNames;
-
-        DIR *dr;
-        struct dirent *en;
-        dr = opendir(testFileFolder.c_str()); // Open directory
-        if (dr) {
-            while ((en = readdir(dr)) != NULL) {
-                std::string temp = en->d_name; // Grab file names
-
-                // Add files that end in PNG and contain search term
-                if (temp.find(".png") != std::string::npos) {
-                    if (temp.find(searchTerm) != std::string::npos) {
-                        fileNames.push_back(temp); 
-                    }
-                }
-            }
-            closedir(dr); // Close directory
-        }
-
-        std::sort (fileNames.begin(), fileNames.end()); // Sort files alphabetically
-        int result[fileNames.size()];
-
-        // Go through each test file to ID
-        for (int i = 0; i < fileNames.size(); i++) {
-            std::string testFile = testFileFolder + fileNames[i];
-            imagePipeline.loadImage(testFile);
-            result[i] = imagePipeline.getTemplateID(boxes, printInnerWorks);
-        }
-
-        // Print result summary
-        printf("\nResults of analysis, ID# and file name.\n");
-        for (int i = 0; i < fileNames.size(); i++) {
-            printf("ID %2d: %s\n", result[i], fileNames[i].c_str());
-        }
-
-        return 0; // Only run this all once
+#ifdef VISION_SAMPLES_TEST
+        // Leave search term for vision as "" for all
+        visionSystemTest("puep", boxes, imagePipeline, true);
+        return 0; // Only run this once
 #else
         ROS_INFO_ONCE("\n\nNOT RUNNING VISION TEST\nRegular vision system operation will commence.\n");
+#endif
 
         int ID = imagePipeline.getTemplateID(boxes, false); // Check if there is something present, do not print internals
         // NOTE: DO NOT CALL IN RAPID SUCCESSION
@@ -178,7 +133,7 @@ int main(int argc, char** argv) {
             // >0 matches template ID spotted
             // boxIDs[current stop in path] = ID;
         }
-#endif
+
         // End of vision stuff
 
         // Sleep and record elapsed time
