@@ -34,10 +34,14 @@ int main(int argc, char** argv) {
     }
     else {
         ROS_INFO("Box coordinates loaded successfully:");
+        std::cout << "Box #, x (m), y(m), yaw (rad)\n"; // Header
 
+        // Output data for each box nicely
         for(int i = 0; i < boxes.coords.size(); ++i) {
-            std::cout << i << "\tx: " << boxes.coords[i][0] << "\ty: " << boxes.coords[i][1] << "\tz: " 
-                    << boxes.coords[i][2] << std::endl;
+            char buffer[100];
+            sprintf(buffer, "%2d\tx: %5.2f\ty: %5.2f\tyaw: %6.3f\n", i, 
+                boxes.coords[i][0], boxes.coords[i][1], boxes.coords[i][2]);
+            std::cout << buffer;
         }
     }
 
