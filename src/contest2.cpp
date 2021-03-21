@@ -101,26 +101,28 @@ int main(int argc, char** argv) {
 
     while(ros::ok() && (secondsElapsed < timeLimit)) {
         ros::spinOnce();
-        /***YOUR CODE HERE***/
-        // Use: boxes.coords
-        // Use: robotPose.x, robotPose.y, robotPose.phi
 
-
-        // Vision stuff past here, no touchy
-           
+        // ==============================================
+        // Tests for features
+        // Configured in "tests.h"
 #ifdef FILE_WRITE_TEST
         fileWriteTest(boxes, movePlan, false);
         return 0;
 #endif
 
 #ifdef VISION_SAMPLES_TEST
-        // Leave search term for vision as "" for all
-        visionSystemTest("puep", boxes, imagePipeline, true);
+        // Leave search term for vision as "" for all test cases
+        visionSystemTest("pup", boxes, imagePipeline, false);
         return 0; // Only run this once
-#else
-        ROS_INFO_ONCE("\n\nNOT RUNNING VISION TEST\nRegular vision system operation will commence.\n");
 #endif
 
+        // ==============================================
+        // Actual loop code
+        // Use: boxes.coords
+        // Use: robotPose.x, robotPose.y, robotPose.phi
+
+        // ==============================================
+        // Vision code
         int ID = imagePipeline.getTemplateID(boxes, false); // Check if there is something present, do not print internals
         // NOTE: DO NOT CALL IN RAPID SUCCESSION
         // TODO: See if this is related to period between calls or quantity of calls
@@ -142,7 +144,7 @@ int main(int argc, char** argv) {
     }
 
     // Time's up handle proper closure
-    ROS_WARN("\nTIME'S UP (%d seconds)! RECORDING OUTPUT AND TERMINATING.\n", timeLimit);
+    ROS_WARN("\nTIME'S UP! (%d seconds)\n RECORDING OUTPUT AND TERMINATING.\n", timeLimit);
 
     writeLog(boxes, movePlan, boxIDs); // Write results before closing
     return 0;
