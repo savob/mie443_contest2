@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
         // Vision stuff past here, no touchy
            
 #ifdef FILE_WRITE_TEST
-        for (int i = 0; i < boxes.coords.size(); i++) boxIDs[i] = i;
+        for (int i = 0; i < boxes.coords.size(); i++) boxIDs[i] = i / 2;
         writeLog(boxes, movePlan, boxIDs);
         return 0;
 #endif
