@@ -10,6 +10,11 @@
 #include "pathPlanning.h"
 
 int main(int argc, char** argv) {
+    // Monitor time elapsed
+    time_t startTime = time(NULL);
+    int secondsElapsed = 0;
+    const int timeLimit = 8 * 60; // Time limit in seconds
+
     // Setup ROS.
     ros::init(argc, argv, "contest2");
     ros::NodeHandle n;
@@ -45,11 +50,6 @@ int main(int argc, char** argv) {
 
     // Variable to record identification of boxes
     std::vector<int> boxIDs(boxes.coords.size()); // Recoding IDs of each box
-
-    // Monitor time elapsed
-    time_t startTime = time(NULL);
-    int secondsElapsed = 0;
-    const int timeLimit = 8 * 60; // Time limit in seconds
 
     while(ros::ok() && (secondsElapsed < timeLimit)) {
         ros::spinOnce();
