@@ -11,9 +11,12 @@ void writeLog(Boxes boxList, std::vector<int> movePlan, std::vector<int> boxIDs,
 
     if (outputFile.is_open()) {
 
-        std::string headerText = "Tag ID (0 for no ID) - Coordinates (x (m), y (m), yaw (rad)) - new or duplicate (dup)\n";
+        std::string headerText = "Tag ID (0 for no ID) - Coordinates (x (m), y (m), yaw (rad)) - new or duplicate (dup)\n\n";
         outputFile << headerText;
-        if (printInfo) std::cout << headerText;
+        if (printInfo) {
+            ROS_INFO("Results of our run.\n");
+            std::cout << headerText;
+        }
 
         // ================================================
         // Read box IDs and their coordinates into the file
