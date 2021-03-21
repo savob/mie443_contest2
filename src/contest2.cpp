@@ -103,7 +103,8 @@ int main(int argc, char** argv) {
         // Vision stuff past here, no touchy
            
 #ifdef FILE_WRITE_TEST
-        for (int i = 0; i < boxes.coords.size(); i++) boxIDs[i] = i / 2;
+        ROS_WARN("\n\nRUNNING FILE OUTPUT TEST\n(will terminate once complete)\n");
+        for (int i = 0; i < boxes.coords.size(); i++) boxIDs[i] = i / 2; // i/2 to get duplicates
         writeLog(boxes, movePlan, boxIDs);
         return 0;
 #endif
@@ -111,7 +112,7 @@ int main(int argc, char** argv) {
         // Decide to include vision test or not (comment the #define in the image header) 
 #ifdef TESTING_VISION_SAMPLES 
 
-        ROS_INFO("\n\nRUNNING VISION TEST\n(will terminate once complete)\n");
+        ROS_WARN("\n\nRUNNING VISION TEST\n(will terminate once complete)\n");
 
         // Test parameters
         std::string testFileFolder = "/home/brobot/catkin_ws/src/mie443_contest2/testpics/";
@@ -169,11 +170,14 @@ int main(int argc, char** argv) {
             // Completed scan without event
             // 0 for blank/nothing to spot
             // >0 matches template ID spotted
+            // boxIDs[current stop in path] = ID;
         }
 #endif
         // End of vision stuff
 
         ros::Duration(0.1).sleep(); // Two second sleep per step
     }
+
+    writeLog(boxes, movePlan, boxIDs); // Write results before closing
     return 0;
 }
