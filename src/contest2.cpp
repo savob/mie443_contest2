@@ -16,6 +16,11 @@ int main(int argc, char** argv) {
     // Robot pose object + subscriber.
     RobotPose robotPose(0,0,0);
     ros::Subscriber amclSub = n.subscribe("/amcl_pose", 1, &RobotPose::poseCallback, &robotPose);
+
+    // Initialize image object and subscriber.
+    ImagePipeline imagePipeline(n);
+    ros::spinOnce(); // Initiate everything
+
     // Initialize box coordinates and templates
     Boxes boxes; 
     if(!boxes.load_coords() || !boxes.load_templates()) {
@@ -35,57 +40,10 @@ int main(int argc, char** argv) {
         }
     }
 
-    // Initialize image object and subscriber.
-    ImagePipeline imagePipeline(n);
-    // Execute strategy.
+    // Path planning from current location
+    std::vector<int> bestRoute = findOptimalPath(boxes, robotPose);
 
-    // Create an adjacency matrix
-    int tour_points = boxes.coords.size() + 1;
-    double adjMatrix[tour_points][tour_points];
-    
-    for(int i = 0; i < tour_points; ++i) {
-        for(int j = 0; j < tour_points; ++j) {
-            if(i == j){
-                adjMatrix[i][j] = 0;
-            }
-            else if(i == 0) {
-                double dx = robotPose.x - boxes.coords[j-1][0];
-                double dy = robotPose.y - boxes.coords[j-1][1];
-                adjMatrix[i][j] = sqrt(dx * dx + dy * dy);
-            }
-            else if(j == 0) {
-                double dx = robotPose.x - boxes.coords[i-1][0];
-                double dy = robotPose.y - boxes.coords[i-1][1];
-                adjMatrix[i][j] = sqrt(dx * dx + dy * dy);
-            }
-            else {
-                double dx = boxes.coords[i-1][0] - boxes.coords[j-1][0];
-                double dy = boxes.coords[i-1][1] - boxes.coords[j-1][1];
-                adjMatrix[i][j] = sqrt(dx * dx + dy * dy);
-            }
-        }
-    }
-
-    // Initialize vector as a set of numbers from 0 to the number of tour points
-    std::vector<int> movePlan(tour_points);
-    for(int i = 0; i < tour_points; ++i) {
-        movePlan[i] = i;
-    }
-
-    // Prepare pointer to pass adjMatrix
-    double *temp[tour_points];
-    for(int i = 0; i < tour_points; ++i) temp[i] = adjMatrix[i];
-
-    double bestScore = loopCost(temp, movePlan);
-    std::vector<int> bestRoute = movePlan;
-    while(std::next_permutation(movePlan.begin() + 1, movePlan.end())) {
-        double s = loopCost(temp, movePlan);
-        if(s < bestScore) {
-            bestScore = s;
-            bestRoute = movePlan;
-        }
-    }
-
+    // Variable to record identification of boxes
     std::vector<int> boxIDs(boxes.coords.size()); // Recoding IDs of each box
 
     // Monitor time elapsed
@@ -100,7 +58,7 @@ int main(int argc, char** argv) {
         // Tests for features, these will only be executed once
         // Configured in "tests.h"
 #ifdef FILE_WRITE_TEST
-        fileWriteTest(boxes, movePlan, false);
+        fileWriteTest(boxes, bestRoute, false);
         return 0;
 #endif
 
@@ -140,6 +98,6 @@ int main(int argc, char** argv) {
     // Time's up handle proper closure
     ROS_WARN("\nTIME'S UP! (%d seconds)\n RECORDING OUTPUT AND TERMINATING.\n", timeLimit);
 
-    writeLog(boxes, movePlan, boxIDs); // Write results before closing
+    writeLog(boxes, bestRoute, boxIDs); // Write results before closing
     return 0;
 }
