@@ -4,20 +4,10 @@
 #include <imagePipeline.h>
 #include <cmath>
 #include <algorithm>
-#include "file_write.h"
+#include "fileWrite.h"
 #include <time.h>
 #include "tests.h"
-
-double loopCost(double **adjMatrix, std::vector<int> movePlan) {
-    // Note, adjMatrix has been passed in by reference so any changes to it will 
-    // be reflected in the variable used when calling this
-    double cost = 0;
-    for(int i = 1; i < movePlan.size(); ++i) {
-        cost += (adjMatrix[movePlan[i]])[movePlan[i-1]];
-    }
-    cost += adjMatrix[movePlan[movePlan.size() - 1]][movePlan[0]];
-    return cost;
-}
+#include "pathPlanning.h"
 
 int main(int argc, char** argv) {
     // Setup ROS.
@@ -106,8 +96,8 @@ int main(int argc, char** argv) {
     while(ros::ok() && (secondsElapsed < timeLimit)) {
         ros::spinOnce();
 
-        // ==============================================
-        // Tests for features
+        // =======================================================
+        // Tests for features, these will only be executed once
         // Configured in "tests.h"
 #ifdef FILE_WRITE_TEST
         fileWriteTest(boxes, movePlan, false);
@@ -117,15 +107,15 @@ int main(int argc, char** argv) {
 #ifdef VISION_SAMPLES_TEST
         // Leave search term for vision as "" for all test cases
         visionSystemTest("pup", boxes, imagePipeline, false);
-        return 0; // Only run this once
+        return 0;
 #endif
 
-        // ==============================================
+        // =======================================================
         // Actual loop code
         // Use: boxes.coords
         // Use: robotPose.x, robotPose.y, robotPose.phi
 
-        // ==============================================
+        // =======================================================
         // Vision code
         int ID = imagePipeline.getTemplateID(boxes, false); // Check if there is something present, do not print internals
         // NOTE: DO NOT CALL IN RAPID SUCCESSION

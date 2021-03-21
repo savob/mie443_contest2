@@ -28,7 +28,8 @@ add_executable(contest2
     src/robot_pose.cpp
     src/imagePipeline.cpp
     src/tests.cpp
-    src/file_write.cpp)
+    src/pathPlanning.cpp
+    src/fileWrite.cpp)
 target_link_libraries(contest2 
     ${catkin_LIBRARIES}  
     ${OpenCV_LIBRARIES}  
