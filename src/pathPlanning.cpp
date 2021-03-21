@@ -11,7 +11,7 @@ double loopCost(double **adjMatrix, std::vector<int> movePlan) {
     return cost;
 }
 
-std::vector<int> findOptimalPath(Boxes boxes, RobotPose startingPose) {
+std::vector<int> findOptimalPath(Boxes boxes, RobotPose startingPose, bool printResult) {
     // Create an adjacency matrix
     int tour_points = boxes.coords.size() + 1;
     double adjMatrix[tour_points][tour_points];
@@ -59,5 +59,16 @@ std::vector<int> findOptimalPath(Boxes boxes, RobotPose startingPose) {
         }
     }
 
+    if(printResult) {
+        ROS_INFO("Best path determined for given boxes. Estimated travel: %.2f m.", bestScore);
+
+        for (int i = 0; i< bestRoute.size() - 1; i++) {
+            char buffer[50];
+            sprintf(buffer, "Stop %2d - Box %2d\t(%5.2f, %5.2f)\n", i + 1, 
+                bestRoute[i], boxes.coords[bestRoute[i]][0], boxes.coords[bestRoute[i]][1]);
+            
+            std::cout << buffer;
+        }
+    }
     return bestRoute;
 }
