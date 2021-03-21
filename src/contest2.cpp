@@ -6,6 +6,7 @@
 #include <cmath>
 #include <algorithm>
 #include "file_write.h"
+#include <time.h>
 
 double loopCost(double **adjMatrix, std::vector<int> movePlan) {
     // Note, adjMatrix has been passed in by reference so any changes to it will 
@@ -93,7 +94,12 @@ int main(int argc, char** argv) {
 
     std::vector<int> boxIDs(boxes.coords.size()); // Recoding IDs of each box
 
-    while(ros::ok()) {
+    // Monitor time elapsed
+    time_t startTime = time(NULL);
+    int secondsElapsed = 0;
+    const int timeLimit = 8 * 60; // Time limit in seconds
+
+    while(ros::ok() && (secondsElapsed < timeLimit)) {
         ros::spinOnce();
         /***YOUR CODE HERE***/
         // Use: boxes.coords
@@ -175,8 +181,13 @@ int main(int argc, char** argv) {
 #endif
         // End of vision stuff
 
-        ros::Duration(0.1).sleep(); // Two second sleep per step
+        // Sleep and record elapsed time
+        ros::Duration(0.1).sleep();
+        secondsElapsed = time(NULL) - startTime;
     }
+
+    // Time's up handle proper closure
+    ROS_WARN("\nTIME'S UP (%d seconds)! RECORDING OUTPUT AND TERMINATING.\n", timeLimit);
 
     writeLog(boxes, movePlan, boxIDs); // Write results before closing
     return 0;
