@@ -1,16 +1,20 @@
 #include "file_write.h"
 
-void writeLog(Boxes boxList, std::vector<int> movePlan, std::vector<int> boxIDs) {
+void writeLog(Boxes boxList, std::vector<int> movePlan, std::vector<int> boxIDs, bool printInfo) {
 
     // Opens/creates log file (clears the contents if there was one prior to this)
+    char * homeDir = std::getenv("HOME"); // Get home directory for user
+    std::string fileLocation = homeDir + logfile; // Combines with the prefered file path
+    
     std::ofstream outputFile;
-    outputFile.open(logfile, std::ios_base::out | std::ios_base::trunc);
+    outputFile.open(fileLocation.c_str(), std::ios_base::out | std::ios_base::trunc);
 
     if (outputFile.is_open()) {
 
-        std::string headerText = "Tag ID (0 for blank/failed to ID) - Duplicate Status - Coordinates (x, y, yaw)\n";
+        std::string headerText = "Tag ID (0 for no ID) - Coordinates (x (m), y (m), yaw (rad)) - new or duplicate (dup)\n";
         outputFile << headerText;
-        
+        if (printInfo) std::cout << headerText;
+
         // ================================================
         // Read box IDs and their coordinates into the file
 
@@ -23,38 +27,37 @@ void writeLog(Boxes boxList, std::vector<int> movePlan, std::vector<int> boxIDs)
 
             // Record tag ID for that stop
             char tagText[10];
-            sprintf(tagText,"Tag %2d - ", boxIDs[i]);
-            outputFile << tagText;
+            sprintf(tagText,"Tag %2d", boxIDs[i]);
 
             // Record duplicate status
             char dupText[7];
             if (alreadyTagged[boxIDs[i]] == true) {
-                sprintf(dupText, "dup - ");
+                sprintf(dupText, "dup");
             }
             else {
-                sprintf(dupText, "new - ");
+                sprintf(dupText, "new");
                 alreadyTagged[boxIDs[i]] = true; // Mark down it has already been listed
             }
-            outputFile << dupText;
 
             // Record coordinates for the stop from move list
             std::vector<float> curCoords = boxList.coords[movePlan[i]];
-            
             char coordText[25];
             sprintf(coordText, "(%5.2f, %5.2f, %6.3f)", curCoords[0], curCoords[1], curCoords[2]);
-            outputFile << coordText;
 
-            outputFile << "\n"; // Move to next line
+            // Output the entry
+            char outputBuffer[150];
+            sprintf(outputBuffer, "%s - %s - %s\n", tagText, coordText, dupText);
 
-            std::cout << tagText << dupText << coordText << "\n";
+            outputFile <<  outputBuffer; // Write to file
+            if (printInfo) std::cout << outputBuffer;
         }
 
         outputFile.close(); // Must close file once complete
 
-        ROS_INFO("\n\nFile written to \"%s\".\n", logfile);
+        ROS_INFO("\n\nFile with results written to:\n%s\n", fileLocation.c_str());
     }
     else {
         // File failed to open
-        ROS_FATAL("\n\nUnable to open output file.\n\"%s\"\n", logfile);
+        ROS_FATAL("\n\nUnable to prepare output file at:\n%s\n", fileLocation.c_str());
     }
 }
