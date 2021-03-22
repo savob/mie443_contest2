@@ -50,15 +50,14 @@ int main(int argc, char** argv) {
         }
     }
 
-    // Path planning from current location
-    std::vector<int> bestRoute = findOptimalPath(boxes, robotPose, false);
-
     // Record starting position
     std::vector<float> startPosition(3);
     startPosition[0] = robotPose.x;
     startPosition[1] = robotPose.y;
     startPosition[2] = robotPose.phi;
     ROS_INFO("Starting position:\n\tx: %5.2f\ty: %5.2f\tyaw: %5.2f", startPosition[0], startPosition[1], startPosition[3]);
+
+    pathPlanning pathPlanned(n, boxes, startPosition);
 
     // Variable to record identification of boxes
     std::vector<int> boxIDs(boxes.coords.size()); // Recoding IDs of each box
@@ -80,7 +79,7 @@ int main(int argc, char** argv) {
         return 0;
 #endif
 #ifdef MOTION_TEST
-        navigationSystemTest(n, startPosition, boxes);
+        navigationSystemTest(pathPlanned);
         return(0);
 #endif
 
@@ -119,7 +118,7 @@ int main(int argc, char** argv) {
             currentStop++;
 
             // Check if it has successfully returned to the start
-            if (currentStop == bestRoute.size()) {
+            if (currentStop == pathPlanned.idealOrder.size()) {
                 ROS_WARN("\nREACHED END! (%.1f seconds)\n RECORDING OUTPUT AND TERMINATING.\n", secondsElapsed);
                 break; // Break out of while loop
             }
@@ -137,7 +136,7 @@ int main(int argc, char** argv) {
         // Time's up handle proper closure
         ROS_WARN("\nTIME'S UP! (%d seconds)\n RECORDING OUTPUT AND TERMINATING.\n", timeLimit);
     }
-    writeLog(boxes, bestRoute, boxIDs); // Write results before closing
+    writeLog(boxes, pathPlanned.idealOrder, boxIDs); // Write results before closing
 
     ROS_FATAL("Ending now. Goodbye.");
     return 0;

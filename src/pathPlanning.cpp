@@ -1,18 +1,35 @@
 #include "pathPlanning.h"
 
-#define RAD2DEG(rad) ((rad)*180./M_PI)
-#define DEG2RAD(deg) ((deg)*M_PI/180.)
+float pathPlanning::deg2rad(float angle) {
+    return (angle * M_PI) / 180.0;
+}
+float pathPlanning::rad2deg(float angle) {
+    return (angle * 180.0) / M_PI;
+}
 
-std::vector<float> faceBoxPoint(std::vector<float> boxCoords, std::vector<float> start, ros::NodeHandle& nh) {
+pathPlanning::pathPlanning(ros::NodeHandle& n, Boxes boxesIn, std::vector<float> startPosition) {
+    nh = n;
+    boxes = boxesIn;
+    startCoord = startPosition;
+
+    //Initialize lists
+    for (int i = 0; i < boxes.coords.size(); i++) {
+        stopCoords.push_back(faceBoxPoint(boxes.coords[i]));
+    }
+    idealOrder = findOptimalPath(false);
+}
+
+std::vector<float> pathPlanning::faceBoxPoint(std::vector<float> boxCoords) {
     std::vector<float> output(3,0);
+
     float offsetDist = 0.4; // Offset in meters
     float offsetAngle = 0;  // Angle offset from face normal
-    bool validPoint = false;
 
-    const float offsetAngleLimit = DEG2RAD(50);
-    const float offsetAngleStep = DEG2RAD(10);
+    const float offsetAngleLimit = deg2rad(50);
+    const float offsetAngleStep = deg2rad(10);
 
     // Generate points starting from middle and then going outwards up to a limit
+    bool validPoint = false;
     do {
         // Adjust position coordinates based off box face
         output[0] = boxCoords[0] + offsetDist * cosf(boxCoords[2] + offsetAngle);
@@ -28,14 +45,14 @@ std::vector<float> faceBoxPoint(std::vector<float> boxCoords, std::vector<float>
         else offsetAngle = (0.0 - offsetAngle) + offsetAngleStep;   // Flip and add increment (once positive again)
 
         // Check if the plotted point is valid
-        validPoint = checkPlan(nh, start, output);
+        validPoint = checkPossible(output);
 
     } while (!validPoint && (offsetAngle < offsetAngleLimit));
 
     // Alert user to failure
     if (!validPoint) {
-        ROS_ERROR("No valid location to offset to.\n\tPoint: (%5.2f, %5.2f. %6.3f)\n\tOffset Dist.: %5.2f m\tOffset Angle: %5.2f",
-            boxCoords[0], boxCoords[1], boxCoords[2], offsetDist, RAD2DEG(offsetAngleLimit));
+        ROS_ERROR("No valid location to offset to.\n\tPoint: (%5.2f, %5.2f. %5.1f)\n\tOffset Dist.: %5.2f m\tOffset Angle: %5.2f",
+            boxCoords[0], boxCoords[1], boxCoords[2], offsetDist, rad2deg(offsetAngleLimit));
         
         output = boxCoords; // Return the input
     }
@@ -43,7 +60,7 @@ std::vector<float> faceBoxPoint(std::vector<float> boxCoords, std::vector<float>
     return output;  
 }
 
-bool clearCostMap(ros::NodeHandle& nh) {
+bool pathPlanning::clearCostMap() {
     // Clear cost map using the service
     std_srvs::Empty srv;
     ros::ServiceClient clear = nh.serviceClient<std_srvs::Empty>("move_base/clear_costmaps");
@@ -54,7 +71,7 @@ bool clearCostMap(ros::NodeHandle& nh) {
     return callExecuted;
 }
 
-bool checkPlan(ros::NodeHandle& nh, std::vector<float> startCoord, std::vector<float> goalCoord) {
+bool pathPlanning::checkPossible(std::vector<float> goalCoord) {
     
     bool callExecuted, validPlan;
 
@@ -111,7 +128,7 @@ bool checkPlan(ros::NodeHandle& nh, std::vector<float> startCoord, std::vector<f
     return validPlan;
 }
 
-double loopCost(double **adjMatrix, std::vector<int> movePlan) {
+double pathPlanning::loopCost(double **adjMatrix, std::vector<int> movePlan) {
     // Note, adjMatrix has been passed in by reference so any changes to it will 
     // be reflected in the variable used when calling this
     double cost = 0;
@@ -122,11 +139,11 @@ double loopCost(double **adjMatrix, std::vector<int> movePlan) {
     return cost;
 }
 
-std::vector<int> findOptimalPath(Boxes boxes, RobotPose startingPose, bool printResult) {
+std::vector<int> pathPlanning::findOptimalPath(bool printResult) {
     ROS_INFO("Determining optimal path using brute force method.");
 
     // Create an adjacency matrix
-    int tour_points = boxes.coords.size() + 1;
+    int tour_points = stopCoords.size() + 1;
     double adjMatrix[tour_points][tour_points];
     
     for(int i = 0; i < tour_points; ++i) {
@@ -135,18 +152,18 @@ std::vector<int> findOptimalPath(Boxes boxes, RobotPose startingPose, bool print
                 adjMatrix[i][j] = 0;
             }
             else if(i == 0) {
-                double dx = startingPose.x - boxes.coords[j-1][0];
-                double dy = startingPose.y - boxes.coords[j-1][1];
+                double dx = startCoord[0] - stopCoords[j-1][0];
+                double dy = startCoord[1] - stopCoords[j-1][1];
                 adjMatrix[i][j] = sqrt(dx * dx + dy * dy);
             }
             else if(j == 0) {
-                double dx = startingPose.x - boxes.coords[i-1][0];
-                double dy = startingPose.y - boxes.coords[i-1][1];
+                double dx = startCoord[0] - stopCoords[i-1][0];
+                double dy = startCoord[1] - stopCoords[i-1][1];
                 adjMatrix[i][j] = sqrt(dx * dx + dy * dy);
             }
             else {
-                double dx = boxes.coords[i-1][0] - boxes.coords[j-1][0];
-                double dy = boxes.coords[i-1][1] - boxes.coords[j-1][1];
+                double dx = stopCoords[i-1][0] - stopCoords[j-1][0];
+                double dy = stopCoords[i-1][1] - stopCoords[j-1][1];
                 adjMatrix[i][j] = sqrt(dx * dx + dy * dy);
             }
         }
@@ -178,7 +195,7 @@ std::vector<int> findOptimalPath(Boxes boxes, RobotPose startingPose, bool print
         for (int i = 0; i< bestRoute.size() - 1; i++) {
             char buffer[50];
             sprintf(buffer, "Stop %2d - Box %2d\t(%5.2f, %5.2f)\n", i + 1, 
-                bestRoute[i], boxes.coords[bestRoute[i]][0], boxes.coords[bestRoute[i]][1]);
+                bestRoute[i], stopCoords[bestRoute[i]][0], stopCoords[bestRoute[i]][1]);
             
             std::cout << buffer;
         }
