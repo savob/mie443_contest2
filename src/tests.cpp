@@ -22,7 +22,7 @@ void navigationSystemTest(pathPlanning pathPlanner) {
 
     // Go to all boxes
     for (int i = 0; i < pathPlanner.stopCoords.size(); i ++ ) {
-        ROS_INFO("\n\tGOING TO BOX %d", i);
+        ROS_INFO("\n\tGOING TO STOP %d", i);
         testPoint = pathPlanner.stopCoords[i];
         Navigation::moveToGoal(testPoint);
     }
