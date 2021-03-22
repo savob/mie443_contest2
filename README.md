@@ -8,6 +8,9 @@ Command lines required to initiate the code are given in sequential order below.
 clear; cd ~/catkin_ws/; catkin_make
 roslaunch mie443_contest2 turtlebot_world.launch world:=practice
 rosrun mie443_contest2 contest2
+roslaunch turtlebot_navigation amcl_demo.launch map_file:=/home/brobot/catkin_ws/src/mie443_contest2/maps/map_practice.yaml
+roslaunch turtlebot_rviz_launchers view_navigation.launch
+
 #TODO: ADD ANY ADDITIONAL LINES LIKELY FOR NAVIAGTION
 
 There are no commands needed once execution is complete.
