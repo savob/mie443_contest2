@@ -59,11 +59,6 @@ int main(int argc, char** argv) {
     startPosition[1] = robotPose.y;
     startPosition[2] = robotPose.phi;
     ROS_INFO("Starting position:\n\tx: %5.2f\ty: %5.2f\tyaw: %5.2f", startPosition[0], startPosition[1], startPosition[3]);
-    
-#ifdef MOTION_TEST
-    navigationSystemTest(n, startPosition);
-    return(0);
-#endif
 
     // Variable to record identification of boxes
     std::vector<int> boxIDs(boxes.coords.size()); // Recoding IDs of each box
@@ -79,11 +74,14 @@ int main(int argc, char** argv) {
         fileWriteTest(boxes, bestRoute, false);
         return 0;
 #endif
-
 #ifdef VISION_SAMPLES_TEST
         // Leave search term for vision as "" for all test cases
         visionSystemTest("pup", boxes, imagePipeline, false);
         return 0;
+#endif
+#ifdef MOTION_TEST
+        navigationSystemTest(n, startPosition, boxes);
+        return(0);
 #endif
 
         // =======================================================

@@ -1,6 +1,6 @@
 #include "tests.h"
 
-void navigationSystemTest(ros::NodeHandle& n, std::vector<float> startPosition) {
+void navigationSystemTest(ros::NodeHandle& n, std::vector<float> startPosition, Boxes boxes) {
     ROS_WARN("\n\nMOTION TEST \n(will terminate once complete)\n");
 
     std::vector<float> testPoint(3, 0); // Initialize with 0s
@@ -17,9 +17,16 @@ void navigationSystemTest(ros::NodeHandle& n, std::vector<float> startPosition) 
         testPoint[1] = -3.0 + (float)(rand() % 600) / 100.0;
     } while(checkPlan(n, startPosition, testPoint) == false);
 
-
     Navigation::moveToGoal(testPoint);
     clearCostMap(n);
+
+    // Go to all boxes
+    for (int i = 0; i < boxes.coords.size(); i ++ ) {
+        ROS_INFO("\n\tGOING TO BOX %d", i);
+        testPoint = faceBoxPoint(boxes.coords[i], startPosition, n);
+        Navigation::moveToGoal(testPoint);
+    }
+    
 }
 
 void fileWriteTest(Boxes boxes, std::vector<int> movePlan, bool printStuff) {

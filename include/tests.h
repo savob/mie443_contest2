@@ -17,4 +17,4 @@ const std::string testPhotoFolder = "/catkin_ws/src/mie443_contest2/testpics/"; 
 
 void fileWriteTest(Boxes boxes, std::vector<int> movePlan, bool printStuff);
 void visionSystemTest(std::string searchTerm, Boxes boxes, ImagePipeline &imagePipeline, bool printInnerWorks);
-void navigationSystemTest(ros::NodeHandle& n, std::vector<float> startPosition);
+void navigationSystemTest(ros::NodeHandle& n, std::vector<float> startPosition, Boxes boxes);
