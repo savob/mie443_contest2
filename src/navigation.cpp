@@ -33,3 +33,7 @@ bool Navigation::moveToGoal(float xGoal, float yGoal, float phiGoal){
         return false;
     }
 }
+bool Navigation::moveToGoal(std::vector<float> goal) {
+    // Overload to simplify our commands
+    return Navigation::moveToGoal(goal[0], goal[1], goal[2]);
+}
