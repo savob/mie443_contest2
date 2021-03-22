@@ -1,5 +1,24 @@
 #include "tests.h"
 
+void navigationSystemTest(ros::NodeHandle& n, std::vector<float> startPosition) {
+    ROS_WARN("\n\nMOTION TEST \n(will terminate once complete)\n");
+
+    std::vector<float> testPoint(3, 0); // Initialize with 0s
+
+    // Default ones to fall back on if needed
+    //testPoint[0] = 0.3;
+    //testPoint[1] = -1.4;
+
+    // Generate a goal it can reach within the 6x6 maze
+    do {
+        testPoint[0] = -3.0 + (float)(rand() % 600) / 100.0;
+        testPoint[1] = -3.0 + (float)(rand() % 600) / 100.0;
+    } while(checkPlan(n, startPosition, testPoint) == false);
+
+
+    Navigation::moveToGoal(testPoint[0], testPoint[1], testPoint[2]);
+}
+
 void fileWriteTest(Boxes boxes, std::vector<int> movePlan, bool printStuff) {
     ROS_WARN("\n\nRUNNING FILE OUTPUT TEST\n(will terminate once complete)\n");
 

@@ -3,6 +3,8 @@
 #include "fileWrite.h"
 #include "imagePipeline.h"
 #include <dirent.h>         // Used for reading in the test files
+#include "pathPlanning.h"
+#include "navigation.h"
 
 // "#define"s used to run tests. Comment out any unwanted tests
 // These are used over standard "if"s since these will omit the code from the compilation properly
@@ -15,3 +17,4 @@ const std::string testPhotoFolder = "/catkin_ws/src/mie443_contest2/testpics/"; 
 
 void fileWriteTest(Boxes boxes, std::vector<int> movePlan, bool printStuff);
 void visionSystemTest(std::string searchTerm, Boxes boxes, ImagePipeline &imagePipeline, bool printInnerWorks);
+void navigationSystemTest(ros::NodeHandle& n, std::vector<float> startPosition);
