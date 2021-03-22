@@ -1,5 +1,16 @@
 #include "pathPlanning.h"
 
+bool clearCostMap(ros::NodeHandle& nh) {
+    // Clear cost map using the service
+    std_srvs::Empty srv;
+    ros::ServiceClient clear = nh.serviceClient<std_srvs::Empty>("move_base/clear_costmaps");
+    bool callExecuted = clear.call(srv);
+
+    if (callExecuted) ROS_INFO("Cleared cost map");
+
+    return callExecuted;
+}
+
 bool checkPlan(ros::NodeHandle& nh, std::vector<float> startCoord, std::vector<float> goalCoord) {
 	// Returns true if there is a valid path from start to end
     // https://answers.ros.org/question/264369/move_base-make_plan-service-is-returning-an-empty-path/
@@ -33,12 +44,12 @@ bool checkPlan(ros::NodeHandle& nh, std::vector<float> startCoord, std::vector<f
     goal.pose.orientation.w = phi.w;
     
     // Set up the service and call it
-    ros::ServiceClient check_path = nh.serviceClient<nav_msgs::GetPlan>("move_base/NavfnROS/make_plan");
+    ros::ServiceClient checkPath = nh.serviceClient<nav_msgs::GetPlan>("move_base/NavfnROS/make_plan");
     
     srv.request.start = start;
     srv.request.goal = goal;
     srv.request.tolerance = 0.0;
-    callExecuted = check_path.call(srv);
+    callExecuted = checkPath.call(srv);
     
     if(!callExecuted){
         ROS_ERROR("Call to check plan NOT sent");

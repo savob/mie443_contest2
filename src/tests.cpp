@@ -9,6 +9,8 @@ void navigationSystemTest(ros::NodeHandle& n, std::vector<float> startPosition) 
     //testPoint[0] = 0.3;
     //testPoint[1] = -1.4;
 
+    srand(time(NULL)); // Seed the random number generator with the current time
+    
     // Generate a goal it can reach within the 6x6 maze
     do {
         testPoint[0] = -3.0 + (float)(rand() % 600) / 100.0;
@@ -17,6 +19,7 @@ void navigationSystemTest(ros::NodeHandle& n, std::vector<float> startPosition) 
 
 
     Navigation::moveToGoal(testPoint[0], testPoint[1], testPoint[2]);
+    clearCostMap(n);
 }
 
 void fileWriteTest(Boxes boxes, std::vector<int> movePlan, bool printStuff) {
