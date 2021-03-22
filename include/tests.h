@@ -9,6 +9,7 @@
 
 //#define FILE_WRITE_TEST       // Execute file output test
 //#define VISION_SAMPLES_TEST   // Run test code for vision (go through test files)
+#define MOTION_TEST           // Test motion functions / systems
 
 const std::string testPhotoFolder = "/catkin_ws/src/mie443_contest2/testpics/"; // Relative to user home
 

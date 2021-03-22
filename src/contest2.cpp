@@ -12,7 +12,7 @@
 int main(int argc, char** argv) {
     // Monitor time elapsed
     time_t startTime = time(NULL);
-    int secondsElapsed = 0;
+    float secondsElapsed = 0;
     const int timeLimit = 8 * 60; // Time limit in seconds
 
     // Setup ROS.
@@ -48,8 +48,17 @@ int main(int argc, char** argv) {
     // Path planning from current location
     std::vector<int> bestRoute = findOptimalPath(boxes, robotPose, false);
 
+    // Record starting position
+    std::vector<float> startPosition(3);
+    startPosition[0] = robotPose.x;
+    startPosition[1] = robotPose.y;
+    startPosition[2] = robotPose.phi;
+    ROS_INFO("Starting position:\n\tx: %5.2f\ty: %5.2f\tyaw: %5.2f", startPosition[0], startPosition[1], startPosition[3]);
+    return(0);
+
     // Variable to record identification of boxes
     std::vector<int> boxIDs(boxes.coords.size()); // Recoding IDs of each box
+    int currentStop = 0;
 
     while(ros::ok() && (secondsElapsed < timeLimit)) {
         ros::spinOnce();
@@ -73,31 +82,54 @@ int main(int argc, char** argv) {
         // Use: boxes.coords
         // Use: robotPose.x, robotPose.y, robotPose.phi
 
+        bool atSpotToScan = false;
+
         // =======================================================
         // Vision code
-        int ID = imagePipeline.getTemplateID(boxes, false); // Check if there is something present, do not print internals
-        // NOTE: DO NOT CALL IN RAPID SUCCESSION
-        // TODO: See if this is related to period between calls or quantity of calls
-        if (ID == -1) {
-            // Handle error... or don't
+        if (atSpotToScan) {
+            int ID = imagePipeline.getTemplateID(boxes, false); // Check if there is something present, do not print internals
+            // NOTE: DO NOT CALL IN RAPID SUCCESSION
+            // TODO: See if this is related to period between calls or quantity of calls
+            if (ID == -1) {
+                // Handle error... or don't
+            }
+            else {
+                // Completed scan without event
+                // 0 for blank/nothing to spot
+                // >0 matches template ID spotted
+                boxIDs[currentStop] = ID;
+            }
         }
-        else {
-            // Completed scan without event
-            // 0 for blank/nothing to spot
-            // >0 matches template ID spotted
-            // boxIDs[current stop in path] = ID;
-        }
-
         // End of vision stuff
+
+
+
+
+        // =======================================================
+        // Handle reaching a stop
+        if (atSpotToScan) {
+
+            currentStop++;
+
+            // Check if it has successfully returned to the start
+            if (currentStop == bestRoute.size()) {
+                ROS_WARN("\nREACHED END! (%.1f seconds)\n RECORDING OUTPUT AND TERMINATING.\n", secondsElapsed);
+                break; // Break out of while loop
+            }
+        }
 
         // Sleep and record elapsed time
         ros::Duration(0.1).sleep();
         secondsElapsed = time(NULL) - startTime;
     }
+    
+    // =======================================================
+    // Handle proper closure
 
-    // Time's up handle proper closure
-    ROS_WARN("\nTIME'S UP! (%d seconds)\n RECORDING OUTPUT AND TERMINATING.\n", timeLimit);
-
+    if (secondsElapsed >= timeLimit) {
+        // Time's up handle proper closure
+        ROS_WARN("\nTIME'S UP! (%d seconds)\n RECORDING OUTPUT AND TERMINATING.\n", timeLimit);
+    }
     writeLog(boxes, bestRoute, boxIDs); // Write results before closing
 
     ROS_FATAL("Ending now. Goodbye.");
