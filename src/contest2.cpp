@@ -24,7 +24,12 @@ int main(int argc, char** argv) {
 
     // Initialize image object and subscriber.
     ImagePipeline imagePipeline(n);
-    ros::spinOnce(); // Initiate everything
+
+    // Spin a couple times to sync properly
+    for (int i = 0; i < 3; i++) {
+        ros::Duration(0.1).sleep();
+        ros::spinOnce();
+    }
 
     // Initialize box coordinates and templates
     Boxes boxes; 
