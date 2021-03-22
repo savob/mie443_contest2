@@ -1,5 +1,48 @@
 #include "pathPlanning.h"
 
+#define RAD2DEG(rad) ((rad)*180./M_PI)
+#define DEG2RAD(deg) ((deg)*M_PI/180.)
+
+std::vector<float> faceBoxPoint(std::vector<float> boxCoords, std::vector<float> start, ros::NodeHandle& nh) {
+    std::vector<float> output(3,0);
+    float offsetDist = 0.4; // Offset in meters
+    float offsetAngle = 0;  // Angle offset from face normal
+    bool validPoint = false;
+
+    const float offsetAngleLimit = DEG2RAD(50);
+    const float offsetAngleStep = DEG2RAD(10);
+
+    // Generate points starting from middle and then going outwards up to a limit
+    do {
+        // Adjust position coordinates based off box face
+        output[0] = boxCoords[0] + offsetDist * cosf(boxCoords[2] + offsetAngle);
+        output[1] = boxCoords[1] + offsetDist * sinf(boxCoords[2] + offsetAngle);
+        
+        // Set angle to face the point
+        output[2] = boxCoords[2] + offsetAngle;
+        if (output[2] > 0) output[2] = output[2] - M_PI;
+        else output[2] = output[2] + M_PI;
+
+        // Adjust increment for next iteration
+        if (offsetAngle > 0) offsetAngle = 0.0 - offsetAngle;       // Flip from positive to negative
+        else offsetAngle = (0.0 - offsetAngle) + offsetAngleStep;   // Flip and add increment (once positive again)
+
+        // Check if the plotted point is valid
+        validPoint = checkPlan(nh, start, output);
+
+    } while (!validPoint && (offsetAngle < offsetAngleLimit));
+
+    // Alert user to failure
+    if (!validPoint) {
+        ROS_ERROR("No valid location to offset to.\n\tPoint: (%5.2f, %5.2f. %6.3f)\n\tOffset Dist.: %5.2f m\tOffset Angle: %5.2f",
+            boxCoords[0], boxCoords[1], boxCoords[2], offsetDist, RAD2DEG(offsetAngleLimit));
+        
+        output = boxCoords; // Return the input
+    }
+
+    return output;  
+}
+
 bool clearCostMap(ros::NodeHandle& nh) {
     // Clear cost map using the service
     std_srvs::Empty srv;
@@ -12,8 +55,6 @@ bool clearCostMap(ros::NodeHandle& nh) {
 }
 
 bool checkPlan(ros::NodeHandle& nh, std::vector<float> startCoord, std::vector<float> goalCoord) {
-	// Returns true if there is a valid path from start to end
-    // https://answers.ros.org/question/264369/move_base-make_plan-service-is-returning-an-empty-path/
     
     bool callExecuted, validPlan;
 
@@ -51,6 +92,7 @@ bool checkPlan(ros::NodeHandle& nh, std::vector<float> startCoord, std::vector<f
     srv.request.tolerance = 0.0;
     callExecuted = checkPath.call(srv);
     
+    // Output print statments
     if(!callExecuted){
         ROS_ERROR("Call to check plan NOT sent");
     }

@@ -12,3 +12,4 @@ std::vector<int> findOptimalPath(Boxes boxes, RobotPose startingPose, bool print
 
 bool checkPlan(ros::NodeHandle& nh, std::vector<float> startCoord, std::vector<float> goalCoord);
 bool clearCostMap(ros::NodeHandle& nh);
+std::vector<float> faceBoxPoint(std::vector<float> boxCoords, std::vector<float> start, ros::NodeHandle& nh);
