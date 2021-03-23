@@ -218,16 +218,20 @@ std::vector<int> pathPlanning::findOptimalPath(bool printResult) {
     }
     bestRoute.pop_back(); // Remove the redundant end point
 
-    ROS_INFO("Best path determined for %d given boxes. Estimated travel: %.2f m.",(int) bestRoute.size(), bestScore);
+    ROS_INFO("Best path determined for %d given boxes.\nEstimated travel of %.2f m with",(int) bestRoute.size(), bestScore);
 
     if(printResult) {
-        for (int i = 0; i < bestRoute.size(); i++) { 
-            char buffer[60];
+        char buffer[60];
 
+        for (int i = 0; i < bestRoute.size(); i++) { 
             sprintf(buffer, "\tStop %2d - Box %2d\t(%5.2f, %5.2f, %6.3f)\n", i + 1, bestRoute[i],
                 stopCoords[bestRoute[i]][0], stopCoords[bestRoute[i]][1], stopCoords[bestRoute[i]][2]);
             std::cout << buffer;
         }
+
+        // Tack on reminder that we return to start
+        sprintf(buffer, "\tReturn to start \t(%5.2f, %5.2f, %6.3f)\n\n", startCoord[0], startCoord[1], startCoord[2]);
+        std::cout << buffer;
     }
     
     return bestRoute;
