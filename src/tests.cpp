@@ -5,6 +5,7 @@ void navigationSystemTest(pathPlanning pathPlanner) {
 
     std::vector<float> testPoint(3, 0); // Initialize with 0s
 
+    /* Random point test
     srand(time(NULL)); // Seed the random number generator with the current time
 
     // Generate a goal it can reach within the 6x6 maze
@@ -15,6 +16,7 @@ void navigationSystemTest(pathPlanning pathPlanner) {
 
     Navigation::moveToGoal(testPoint);
     pathPlanner.clearCostMap();
+    */
 
     // Go to all boxes
     for (int i = 0; i < pathPlanner.stopCoords.size(); i ++ ) {
