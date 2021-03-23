@@ -153,10 +153,11 @@ int main(int argc, char** argv) {
 
     if (secondsElapsed >= timeLimit) {
         // Time's up handle proper closure
-        ROS_WARN("\nTIME'S UP! (%d seconds)\n RECORDING OUTPUT AND TERMINATING.\n", timeLimit);
+        ROS_WARN("TIME'S UP! (%.1f of %d seconds)\n RECORDING OUTPUT AND TERMINATING.\n", secondsElapsed, timeLimit);
     }
-    writeLog(boxes, pathPlanned.idealOrder, boxIDs, true); // Write results before closing
 
-    ROS_FATAL("Ending now. Goodbye.");
+    writeLog(boxes, pathPlanned.idealOrder, boxIDs, true); // Write results before closing (with terminal output)
+
+    ROS_FATAL("Ending now. Goodbye.\n");
     return 0;
 }
