@@ -23,40 +23,36 @@ std::vector<float> pathPlanning::faceBoxPoint(int boxIndex) {
     std::vector<float> output(3,0);
     std::vector<float> boxCoords = boxes.coords[boxIndex];
 
-    float offsetDist = 0.4; // Offset in meters
-    float offsetAngle = 0;  // Angle offset from face normal
-
-    const float offsetAngleLimit = deg2rad(50);
-    const float offsetAngleStep = deg2rad(10);
-
     // Generate points starting from middle and then going outwards up to a limit
-    bool validPoint = false;
-    do {
-        // Adjust position coordinates based off box face
-        output[0] = boxCoords[0] + offsetDist * cosf(boxCoords[2] + offsetAngle);
-        output[1] = boxCoords[1] + offsetDist * sinf(boxCoords[2] + offsetAngle);
-        
-        // Set angle to face the point
-        output[2] = boxCoords[2] + offsetAngle;
-        if (output[2] > 0) output[2] = output[2] - M_PI;
-        else output[2] = output[2] + M_PI;
+    // Also gradually increase distance as needed
+    for (float offDist = offsetDistStart; offDist <= offsetDistLimit; offDist = offDist + offsetDistStep) {
+        for (float offAngle = 0; offAngle <= offsetAngleLimit; offAngle = offAngle + offsetAngleStep) {
+            
+            // Adjust position coordinates based off box face
+            output[0] = boxCoords[0] + offDist * cosf(boxCoords[2] + offAngle);
+            output[1] = boxCoords[1] + offDist * sinf(boxCoords[2] + offAngle);
+            
+            // Set angle to face the point
+            output[2] = boxCoords[2] + offAngle;
+            if (output[2] > 0) output[2] = output[2] - M_PI;
+            else output[2] = output[2] + M_PI;
 
-        // Adjust increment for next iteration
-        if (offsetAngle > 0) offsetAngle = 0.0 - offsetAngle;       // Flip from positive to negative
-        else offsetAngle = (0.0 - offsetAngle) + offsetAngleStep;   // Flip and add increment (once positive again)
+            // Adjust increment for next iteration
+            if (offAngle > 0) offAngle = 0.0 - offAngle;       // Flip from positive to negative
+            else offAngle = (0.0 - offAngle) + offsetAngleStep;   // Flip and add increment (once positive again)
 
-        // Check if the plotted point is valid
-        validPoint = checkPossible(output);
+            // Check if the plotted point is valid
+            bool validPoint = checkPossible(output);
 
-    } while (!validPoint && (offsetAngle < offsetAngleLimit));
+            if (validPoint) return output; // Return once possible
+        }
+    } 
 
     // Alert user to failure
-    if (!validPoint) {
-        ROS_ERROR("No valid location to offset to.\n\tPoint: (%5.2f, %5.2f. %5.1f)\n\tOffset Dist.: %5.2f m\tOffset Angle: %5.2f",
-            boxCoords[0], boxCoords[1], boxCoords[2], offsetDist, rad2deg(offsetAngleLimit));
-        
-        output = boxCoords; // Return the input
-    }
+    ROS_ERROR("No valid location to offset to.\n\tPoint: (%5.2f, %5.2f. %5.1f)\n\tOffset Dist.: %5.2f m\tOffset Angle: %5.2f",
+        boxCoords[0], boxCoords[1], boxCoords[2], offsetDistLimit, rad2deg(offsetAngleLimit));
+    
+    output = boxCoords; // Return the input
 
     return output;  
 }

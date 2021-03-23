@@ -8,13 +8,25 @@
 #include <nav_msgs/GetPlan.h>
 #include <std_srvs/Empty.h>
 
+// define marcos used solely for constants
+#define RAD2DEG(rad) ((rad) * 180. / M_PI)
+#define DEG2RAD(deg) ((deg) * M_PI / 180.)
+
 class pathPlanning {
     private:
         float deg2rad(float angle);
         float rad2deg(float angle);
 
-        ros::NodeHandle nh;
+        // Setting up points constants when approaching boxes
+        const float offsetAngleLimit = DEG2RAD(50.0);
+        const float offsetAngleStep = DEG2RAD(10.0);
 
+        const float offsetDistStart = 0.35; // Any less the 0.35and the rover gets stuck
+        const float offsetDistStep = 0.05;
+        const float offsetDistLimit = 0.5;
+
+        // Internal copies/references so they don't need to contantly be passed in
+        ros::NodeHandle nh;
         Boxes boxes;
 
         double loopCost(double **adjMatrix, std::vector<int> movePlan);
