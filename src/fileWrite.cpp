@@ -54,13 +54,14 @@ void writeLog(Boxes boxList, std::vector<int> movePlan, std::vector<int> boxIDs,
             outputFile <<  outputBuffer; // Write to file
             if (printInfo) std::cout << outputBuffer;
         }
+        std::cout << std::endl; // Add space after results
 
         outputFile.close(); // Must close file once complete
 
-        ROS_INFO_COND(printInfo, "\n\nFile with results written to:\n%s\n", fileLocation.c_str());
+        ROS_INFO_COND(printInfo, "File with results written to:\n\n%s\n", fileLocation.c_str());
     }
     else {
         // File failed to open
-        ROS_FATAL("\n\nUnable to prepare output file at:\n%s\n", fileLocation.c_str());
+        ROS_FATAL("Unable to prepare output file at:\n\n%s\n", fileLocation.c_str());
     }
 }

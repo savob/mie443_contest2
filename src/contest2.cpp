@@ -38,9 +38,11 @@ int main(int argc, char** argv) {
     // Setup ROS.
     ros::init(argc, argv, "contest2");
     ros::NodeHandle n;
+    
     // Robot pose object + subscriber.
     RobotPose robotPose(0,0,0);
     ros::Subscriber amclSub = n.subscribe("/amcl_pose", 1, &RobotPose::poseCallback, &robotPose);
+    
     // Initialize image object and subscriber.
     ImagePipeline imagePipeline(n, boxes);
 
@@ -57,7 +59,8 @@ int main(int argc, char** argv) {
     startPosition[2] = robotPose.phi;
     ROS_INFO("Starting position:\n\tx: %5.2f\ty: %5.2f\tyaw: %5.2f", startPosition[0], startPosition[1], startPosition[3]);
 
-    pathPlanning pathPlanned(n, boxes, startPosition, true);
+    // Initialize path planner
+    pathPlanning pathPlanned(n, boxes, startPosition, false); // Path data
 
     // Variable to record identification of boxes
     std::vector<int> boxIDs(boxes.coords.size()); // Recoding IDs of each box
@@ -85,26 +88,31 @@ int main(int argc, char** argv) {
 
         // =======================================================
         // Actual loop code
+        int boxNumber = pathPlanned.idealOrder[currentStop]; // Stores current box index
 
         // =======================================================
         // Motion code
         // Start by checking if it is time to return to start and terminate
 
         if (currentStop == pathPlanned.idealOrder.size()) {
+            ROS_WARN("Done all stops, returning to start.");
             bool atEnd = pathPlanned.goToCoords(pathPlanned.startCoord);
 
             // Check if it has successfully returned to the start
-            if (atEnd) ROS_WARN("\nREACHED END! (%.1f seconds)\n TERMINATING\n", secondsElapsed);
-            else ROS_ERROR("\nFAILED TO REACH END! (%.1f seconds)\n TERMINATING\n", secondsElapsed);
+            if (atEnd) ROS_WARN("Reached end in %.1f seconds\n", secondsElapsed);
+            else ROS_ERROR("FAILED TO REACH END! (%.1f seconds elapsed).\n\tTerminating anyways.\n", secondsElapsed);
             
             break; // Break out of while loop (to terminate)
         }
 
+        // Inform us what step is started and target
+        ROS_INFO("Starting step %d, target is box %d.", currentStop + 1, boxNumber);
+
         // Do normal motion otherwise
         bool atSpotToScan = pathPlanned.goToStop(currentStop);
         
-        if (atSpotToScan) ROS_INFO("Reached box %d", currentStop + 1);
-        else ROS_ERROR("Failed to reach box %d", currentStop + 1);
+        if (atSpotToScan) ROS_INFO("Reached stop %d (box %d)", currentStop + 1, boxNumber);
+        else ROS_ERROR("Failed to reach stop %d (box %d)", currentStop + 1, boxNumber);
 
         if (atSpotToScan) {
             // Perhaps some code to try and align bot with target even if unreachable
@@ -118,8 +126,7 @@ int main(int argc, char** argv) {
         ros::spinOnce(); // Update video feed after moving
 
         // Check if there is something present
-        int ID = imagePipeline.getTemplateID(boxes, true); 
-        ROS_INFO("Completed image scan call, returned %d", ID);
+        int ID = imagePipeline.getTemplateID(boxes, false);
         
         if (ID >= 0) boxIDs[currentStop] = ID; // Good scan (error-free) 
         else {
@@ -129,8 +136,7 @@ int main(int argc, char** argv) {
         // =======================================================
         // Record results 
         // Every step, so in the event of interruption our progress isn't lost
-        writeLog(boxes, pathPlanned.idealOrder, boxIDs); 
-
+        writeLog(boxes, pathPlanned.idealOrder, boxIDs);
 
         // =======================================================
         // Increment to next step
@@ -149,7 +155,7 @@ int main(int argc, char** argv) {
         // Time's up handle proper closure
         ROS_WARN("\nTIME'S UP! (%d seconds)\n RECORDING OUTPUT AND TERMINATING.\n", timeLimit);
     }
-    writeLog(boxes, pathPlanned.idealOrder, boxIDs); // Write results before closing
+    writeLog(boxes, pathPlanned.idealOrder, boxIDs, true); // Write results before closing
 
     ROS_FATAL("Ending now. Goodbye.");
     return 0;
