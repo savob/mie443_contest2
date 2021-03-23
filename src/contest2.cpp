@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
     ROS_INFO("Starting position:\n\tx: %5.2f\ty: %5.2f\tyaw: %5.2f", startPosition[0], startPosition[1], startPosition[3]);
 
     // Initialize path planner
-    pathPlanning pathPlanned(n, boxes, startPosition, false); // Path data
+    pathPlanning pathPlanned(n, boxes, startPosition, true); // Path data
 
     // Variable to record identification of boxes
     std::vector<int> boxIDs(boxes.coords.size()); // Recoding IDs of each box
