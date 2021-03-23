@@ -7,6 +7,7 @@
 #include <tf/transform_datatypes.h>
 #include <nav_msgs/GetPlan.h>
 #include <std_srvs/Empty.h>
+#include "navigation.h"
 
 // define marcos used solely for constants
 #define RAD2DEG(rad) ((rad) * 180. / M_PI)
@@ -43,5 +44,5 @@ class pathPlanning {
         std::vector<float> faceBoxPoint(int boxIndex);
         bool checkPossible(std::vector<float> goalCoord, bool printStuff = false);
 
-
+        bool goToCoords(std::vector<float> target);
 };

@@ -7,6 +7,24 @@ float pathPlanning::rad2deg(float angle) {
     return (angle * 180.0) / M_PI;
 }
 
+bool pathPlanning::goToCoords(std::vector<float> target) {
+    
+    bool gotThere = Navigation::moveToGoal(target);
+
+    // Handle initial failure
+    if (!gotThere) {
+        ROS_INFO("Initial attempt failed, clearing cost table.");
+        
+        clearCostMap(); // Clear cost map and reattempt motion
+        gotThere = Navigation::moveToGoal(target);
+        
+        // Absolute failure
+        if (!gotThere) ROS_ERROR("Failed to reach point (%5.2f, %5.2f, %6.3f)", target[0], target[1], target[2]);
+    }
+
+    return gotThere;
+}
+
 pathPlanning::pathPlanning(ros::NodeHandle& n, Boxes boxesIn, std::vector<float> startPosition) {
     nh = n;
     boxes = boxesIn;
@@ -25,8 +43,9 @@ std::vector<float> pathPlanning::faceBoxPoint(int boxIndex) {
 
     // Generate points starting from middle and then going outwards up to a limit
     // Also gradually increase distance as needed
+    for (float offAngle = 0; offAngle <= offsetAngleLimit; offAngle = offAngle + offsetAngleStep) {
     for (float offDist = offsetDistStart; offDist <= offsetDistLimit; offDist = offDist + offsetDistStep) {
-        for (float offAngle = 0; offAngle <= offsetAngleLimit; offAngle = offAngle + offsetAngleStep) {
+        
             
             // Adjust position coordinates based off box face
             output[0] = boxCoords[0] + offDist * cosf(boxCoords[2] + offAngle);
