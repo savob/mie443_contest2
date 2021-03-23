@@ -29,21 +29,23 @@ bool pathPlanning::goToCoords(std::vector<float> target) {
     return gotThere;
 }
 
-pathPlanning::pathPlanning(ros::NodeHandle& n, Boxes boxesIn, std::vector<float> startPosition) {
+pathPlanning::pathPlanning(ros::NodeHandle& n, Boxes boxesIn, std::vector<float> startPosition, bool printStuff) {
     nh = n;
-    boxes = boxesIn;
     startCoord = startPosition;
 
     //Initialize lists
-    for (int i = 0; i < boxes.coords.size(); i++) {
+    for (int i = 0; i < boxesIn.coords.size(); i++) {
+        boxCoordList.push_back(boxesIn.coords[i]);
         stopCoords.push_back(faceBoxPoint(i));
     }
-    idealOrder = findOptimalPath(false);
+
+    idealOrder = findOptimalPath(printStuff);
 }
 
 std::vector<float> pathPlanning::faceBoxPoint(int boxIndex) {
     std::vector<float> output(3,0);
-    std::vector<float> boxCoords = boxes.coords[boxIndex];
+
+    std::vector<float> boxCoords = boxCoordList[boxIndex];
 
     // Generate points starting from middle and then going outwards up to a limit
     // Also gradually increase distance as needed
@@ -67,7 +69,7 @@ std::vector<float> pathPlanning::faceBoxPoint(int boxIndex) {
             // Check if the plotted point is valid
             bool validPoint = checkPossible(output);
 
-            if (validPoint) return output; // Return once possible
+            if (validPoint) return output; // Return first possible point
         }
     } 
 
@@ -75,9 +77,7 @@ std::vector<float> pathPlanning::faceBoxPoint(int boxIndex) {
     ROS_ERROR("No valid location to offset to.\n\tPoint: (%5.2f, %5.2f. %5.1f)\n\tOffset Dist.: %5.2f m\tOffset Angle: %5.2f",
         boxCoords[0], boxCoords[1], boxCoords[2], offsetDistLimit, rad2deg(offsetAngleLimit));
     
-    output = boxCoords; // Return the input
-
-    return output;  
+    return boxCoords; // Return the input if failed to find a point
 }
 
 bool pathPlanning::clearCostMap() {
@@ -201,6 +201,7 @@ std::vector<int> pathPlanning::findOptimalPath(bool printResult) {
 
     double bestScore = loopCost(temp, movePlan);
     std::vector<int> bestRoute = movePlan;
+
     while(std::next_permutation(movePlan.begin() + 1, movePlan.end())) {
         double s = loopCost(temp, movePlan);
         if(s < bestScore) {
@@ -211,9 +212,11 @@ std::vector<int> pathPlanning::findOptimalPath(bool printResult) {
 
     ROS_INFO("Best path determined for given boxes. Estimated travel: %.2f m.", bestScore);
 
+    ROS_INFO("WE HERE. %s - %d",__FILE__ , __LINE__ );
+    
     if(printResult) {
         for (int i = 0; i< bestRoute.size() - 1; i++) {
-            char buffer[50];
+            char buffer[80];
             sprintf(buffer, "Stop %2d - Box %2d\t(%5.2f, %5.2f)\n", i + 1, 
                 bestRoute[i], stopCoords[bestRoute[i]][0], stopCoords[bestRoute[i]][1]);
             

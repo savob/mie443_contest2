@@ -28,7 +28,7 @@ class pathPlanning {
 
         // Internal copies/references so they don't need to contantly be passed in
         ros::NodeHandle nh;
-        Boxes boxes;
+        std::vector<std::vector<float> > boxCoordList;
 
         double loopCost(double **adjMatrix, std::vector<int> movePlan);
         std::vector<int> findOptimalPath(bool printResult); // Returns best route as box IDs to take
@@ -39,7 +39,7 @@ class pathPlanning {
         std::vector<int> idealOrder; // Holds the order to take through the world
         std::vector<std::vector<float> > stopCoords; // Stores the coordinates of each stop corrisponding to a box
 
-        pathPlanning(ros::NodeHandle& n, Boxes boxesIn, std::vector<float> startPosition);
+        pathPlanning(ros::NodeHandle& n, Boxes boxesIn, std::vector<float> startPosition, bool printStuff = false);
         bool clearCostMap();
         std::vector<float> faceBoxPoint(int boxIndex);
         bool checkPossible(std::vector<float> goalCoord, bool printStuff = false);
