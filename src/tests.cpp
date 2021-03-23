@@ -22,19 +22,18 @@ void navigationSystemTest(pathPlanning pathPlanner) {
     for (int i = 0; i < pathPlanner.stopCoords.size(); i ++ ) {
         ROS_INFO("\n\tGOING TO STOP %d", i);
         testPoint = pathPlanner.stopCoords[i];
-        bool gotThere = Navigation::moveToGoal(testPoint);
 
-        // Handle initial failure
-        if (!gotThere) {
-            ROS_INFO("Initial attempt failed, recalculating target and retrying.");
-            testPoint = pathPlanner.faceBoxPoint(i);
-            //pathPlanner.clearCostMap(); // Clear cost map and reattempt motion
-            gotThere = Navigation::moveToGoal(testPoint);
-            
-            // Absolute failure
-            if (!gotThere) ROS_ERROR("Failed to reach box %d", i);
-        }
+        bool gotThere = pathPlanner.goToCoords(testPoint);
+        
+        if (gotThere) ROS_INFO("Reached box %d", i);
+        else ROS_ERROR("Failed to reach box %d", i);
+
+        ros::Duration(5).sleep(); // Simulate scan and so we can register it stopping
     }
+
+    bool gotThere = pathPlanner.goToCoords(pathPlanner.startCoord);
+        
+    if (!gotThere) ROS_ERROR("Failed to return to starting point.");
     
 }
 
