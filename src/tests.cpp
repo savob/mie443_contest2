@@ -5,10 +5,6 @@ void navigationSystemTest(pathPlanning pathPlanner) {
 
     std::vector<float> testPoint(3, 0); // Initialize with 0s
 
-    // Default ones to fall back on if needed
-    //testPoint[0] = 0.3;
-    //testPoint[1] = -1.4;
-
     srand(time(NULL)); // Seed the random number generator with the current time
 
     // Generate a goal it can reach within the 6x6 maze
@@ -24,7 +20,18 @@ void navigationSystemTest(pathPlanning pathPlanner) {
     for (int i = 0; i < pathPlanner.stopCoords.size(); i ++ ) {
         ROS_INFO("\n\tGOING TO STOP %d", i);
         testPoint = pathPlanner.stopCoords[i];
-        Navigation::moveToGoal(testPoint);
+        bool gotThere = Navigation::moveToGoal(testPoint);
+
+        // Handle initial failure
+        if (!gotThere) {
+            ROS_INFO("Initial attempt failed, recalculating target and retrying.");
+            testPoint = pathPlanner.faceBoxPoint(i);
+            //pathPlanner.clearCostMap(); // Clear cost map and reattempt motion
+            gotThere = Navigation::moveToGoal(testPoint);
+            
+            // Absolute failure
+            if (!gotThere) ROS_ERROR("Failed to reach box %d", i);
+        }
     }
     
 }
