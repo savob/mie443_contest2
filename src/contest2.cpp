@@ -126,20 +126,20 @@ int main(int argc, char** argv) {
             // Handle error... or don't 
         }  
 
-        // End of vision stuff
-
-
+        // =======================================================
+        // Record results 
+        // Every step, so in the event of interruption our progress isn't lost
+        writeLog(boxes, pathPlanned.idealOrder, boxIDs); 
 
 
         // =======================================================
         // Increment to next step
         currentStop++;
+        std::cout << "\n\n"; // Make a break in terminal between stops
 
         // Sleep and record elapsed time
         ros::Duration(0.1).sleep();
         secondsElapsed = time(NULL) - startTime;
-
-        std::cout << "\n\n"; // Make a break in terminal between stops
     }
     
     // =======================================================
