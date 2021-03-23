@@ -218,9 +218,9 @@ std::vector<int> pathPlanning::findOptimalPath(bool printResult) {
     }
     bestRoute.pop_back(); // Remove the redundant end point
 
-    ROS_INFO("Best path determined for %d given boxes.\nEstimated travel of %.2f m with",(int) bestRoute.size(), bestScore);
-
     if(printResult) {
+        ROS_INFO("Best path determined for %d given boxes.\nEstimated travel of %.2f m with",(int) bestRoute.size(), bestScore);
+
         char buffer[60];
 
         for (int i = 0; i < bestRoute.size(); i++) { 
