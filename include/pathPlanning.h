@@ -28,8 +28,8 @@ class pathPlanning {
 
         pathPlanning(ros::NodeHandle& n, Boxes boxesIn, std::vector<float> startPosition);
         bool clearCostMap();
-        std::vector<float> faceBoxPoint(std::vector<float> boxCoords);
-        bool checkPossible(std::vector<float> goalCoord);
+        std::vector<float> faceBoxPoint(int boxIndex);
+        bool checkPossible(std::vector<float> goalCoord, bool printStuff = false);
 
 
 };

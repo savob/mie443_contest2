@@ -14,13 +14,14 @@ pathPlanning::pathPlanning(ros::NodeHandle& n, Boxes boxesIn, std::vector<float>
 
     //Initialize lists
     for (int i = 0; i < boxes.coords.size(); i++) {
-        stopCoords.push_back(faceBoxPoint(boxes.coords[i]));
+        stopCoords.push_back(faceBoxPoint(i));
     }
     idealOrder = findOptimalPath(false);
 }
 
-std::vector<float> pathPlanning::faceBoxPoint(std::vector<float> boxCoords) {
+std::vector<float> pathPlanning::faceBoxPoint(int boxIndex) {
     std::vector<float> output(3,0);
+    std::vector<float> boxCoords = boxes.coords[boxIndex];
 
     float offsetDist = 0.4; // Offset in meters
     float offsetAngle = 0;  // Angle offset from face normal
@@ -71,7 +72,7 @@ bool pathPlanning::clearCostMap() {
     return callExecuted;
 }
 
-bool pathPlanning::checkPossible(std::vector<float> goalCoord) {
+bool pathPlanning::checkPossible(std::vector<float> goalCoord, bool printStuff) {
     
     bool callExecuted, validPlan;
 
@@ -116,12 +117,12 @@ bool pathPlanning::checkPossible(std::vector<float> goalCoord) {
 
     if(srv.response.plan.poses.size() > 0){
         validPlan = true;
-        ROS_INFO("Successful plan.\n\tStart: (%5.2f, %5.2f. %6.3f)\n\tGoal:  (%5.2f, %5.2f. %6.3f)",
+        ROS_INFO_COND(printStuff, "Successful plan.\n\tStart: (%5.2f, %5.2f. %6.3f)\n\tGoal:  (%5.2f, %5.2f. %6.3f)",
             startCoord[0], startCoord[1], startCoord[2], goalCoord[0], goalCoord[1], goalCoord[2]);
     }
     else{
         validPlan = false;
-        ROS_WARN("Unsuccessful plan.\n\tStart: (%5.2f, %5.2f. %6.3f)\n\tGoal:  (%5.2f, %5.2f. %6.3f)",
+        ROS_INFO_COND(printStuff, "Unsuccessful plan.\n\tStart: (%5.2f, %5.2f. %6.3f)\n\tGoal:  (%5.2f, %5.2f. %6.3f)",
             startCoord[0], startCoord[1], startCoord[2], goalCoord[0], goalCoord[1], goalCoord[2]);
     }
     
