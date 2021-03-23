@@ -57,8 +57,8 @@ int main(int argc, char** argv) {
     startPosition[2] = robotPose.phi;
     ROS_INFO("Starting position:\n\tx: %5.2f\ty: %5.2f\tyaw: %5.2f", startPosition[0], startPosition[1], startPosition[3]);
 
-    pathPlanning pathPlanned(n, boxes, startPosition);
-    
+    pathPlanning pathPlanned(n, boxes, startPosition, true);
+
     // Variable to record identification of boxes
     std::vector<int> boxIDs(boxes.coords.size()); // Recoding IDs of each box
     int currentStop = 0;
@@ -106,25 +106,26 @@ int main(int argc, char** argv) {
         if (atSpotToScan) ROS_INFO("Reached box %d", currentStop + 1);
         else ROS_ERROR("Failed to reach box %d", currentStop + 1);
 
+        if (atSpotToScan) {
+            // Perhaps some code to try and align bot with target even if unreachable
+        }
+
         // =======================================================
         // Vision code
+        // Scan regardless of if we succcessfully reached destination or not
+        // since we might be lucky and be able to see it from where we stand
 
         ros::spinOnce(); // Update video feed after moving
 
-        if (atSpotToScan) {
-            int ID = imagePipeline.getTemplateID(boxes, true); // Check if there is something present, do not print internals
-            // NOTE: DO NOT CALL IN RAPID SUCCESSION
-            // TODO: See if this is related to period between calls or quantity of calls
-            if (ID == -1) {
-                // Handle error... or don't
-            }
-            else {
-                // Completed scan without event
-                // 0 for blank/nothing to spot
-                // >0 matches template ID spotted
-                boxIDs[currentStop] = ID;
-            }
-        }
+        // Check if there is something present
+        int ID = imagePipeline.getTemplateID(boxes, true); 
+        ROS_INFO("Completed image scan call, returned %d", ID);
+        
+        if (ID >= 0) boxIDs[currentStop] = ID; // Good scan (error-free) 
+        else {
+            // Handle error... or don't 
+        }  
+
         // End of vision stuff
 
 
@@ -137,6 +138,8 @@ int main(int argc, char** argv) {
         // Sleep and record elapsed time
         ros::Duration(0.1).sleep();
         secondsElapsed = time(NULL) - startTime;
+
+        std::cout << "\n\n"; // Make a break in terminal between stops
     }
     
     // =======================================================
