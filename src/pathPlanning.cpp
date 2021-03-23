@@ -7,6 +7,10 @@ float pathPlanning::rad2deg(float angle) {
     return (angle * 180.0) / M_PI;
 }
 
+bool pathPlanning::goToStop(int index) {
+    return goToCoords(stopCoords[idealOrder[index]]);
+}
+
 bool pathPlanning::goToCoords(std::vector<float> target) {
     
     bool gotThere = Navigation::moveToGoal(target);

@@ -45,4 +45,5 @@ class pathPlanning {
         bool checkPossible(std::vector<float> goalCoord, bool printStuff = false);
 
         bool goToCoords(std::vector<float> target);
+        bool goToStop(int index);
 };
