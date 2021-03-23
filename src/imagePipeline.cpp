@@ -3,10 +3,21 @@
 #define IMAGE_TYPE sensor_msgs::image_encodings::BGR8
 #define IMAGE_TOPIC "camera/rgb/image_raw" // kinect:"camera/rgb/image_raw" webcam:"camera/image"
 
-ImagePipeline::ImagePipeline(ros::NodeHandle& n) {
+ImagePipeline::ImagePipeline(ros::NodeHandle& n, Boxes &boxes) {
     image_transport::ImageTransport it(n);
     sub = it.subscribe(IMAGE_TOPIC, 1, &ImagePipeline::imageCallback, this);
     isValid = false;
+
+    // Preprocress all tags and store in boxes so this only has to happen once
+    for (int i = 0; i < boxes.templates.size(); i++) {
+        tagPreprocess(boxes.templates[i]);
+    }
+}
+
+void ImagePipeline::tagPreprocess(cv::Mat &tag) {
+    cv::resize(tag,tag, cv::Size(500,400));               // Resize to roughly match aspect ratio on boxes
+    cv::GaussianBlur(tag, tag, cv::Size( 3, 3), 0, 0);    // Add blur to aid feature matching
+    //cv::imshow("Tag as used", tagImage); // Show image used in search
 }
 
 void ImagePipeline::imageCallback(const sensor_msgs::ImageConstPtr& msg) {
@@ -109,11 +120,8 @@ int ImagePipeline::getTemplateID(Boxes& boxes, bool showInternals) {
     // Loop through all possible tags
     for (int tagID = 0; tagID < boxes.templates.size(); tagID++) {
 
-        // Load file to refer to for current tag check and preprocess as needed
-        Mat tagImage = boxes.templates[tagID];
-        resize(tagImage,tagImage, Size(500,400));               // Resize to roughly match aspect ratio on boxes
-        GaussianBlur(tagImage, tagImage, Size( 3, 3), 0, 0);    // Add blur to aid feature matching
-        //cv::imshow("Tag as used", tagImage); // Show image used in search
+        // Load reference to tag from boxes (just to help simplfy the code that follows)
+        Mat &tagImage = boxes.templates[tagID];
 
         // See what portion of features from the reference are matched in the scene
         std::vector<DMatch> goodMatches;

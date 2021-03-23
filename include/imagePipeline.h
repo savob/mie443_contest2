@@ -36,6 +36,8 @@ class ImagePipeline {
         // Searches for an image in a scene
         void searchInScene(cv::Mat &refImage, cv::Mat &descriptorsScene, std::vector<cv::KeyPoint> &keypointsObject,
             std::vector<cv::DMatch> &goodMatches, cv::Ptr<cv::xfeatures2d::SURF> &detector);
+
+        void tagPreprocess(cv::Mat &tag); // Preprocess image for tagging (result saved to image)
     public:
         float reqConfRatio   = 1.20; // Ratio between max and second to make a conclusion
         float reqConfMinimum = 0.07; // Minimum threshold to be considered conclusive
@@ -47,7 +49,7 @@ class ImagePipeline {
 
         int minHessian = 350;
 
-        ImagePipeline(ros::NodeHandle& n);
+        ImagePipeline(ros::NodeHandle& n, Boxes& boxes);
         void imageCallback(const sensor_msgs::ImageConstPtr& msg);
         int getTemplateID(Boxes& boxes, bool showInternals = true);
         void loadImage(std::string fileLocation, bool printMessage = true); // Used for testing by loading in our own images

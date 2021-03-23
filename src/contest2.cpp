@@ -9,27 +9,12 @@
 #include "tests.h"
 #include "pathPlanning.h"
 
+const int timeLimit = 8 * 60; // Time limit in seconds
+
 int main(int argc, char** argv) {
     // Monitor time elapsed
     time_t startTime = time(NULL);
     float secondsElapsed = 0;
-    const int timeLimit = 8 * 60; // Time limit in seconds
-
-    // Setup ROS.
-    ros::init(argc, argv, "contest2");
-    ros::NodeHandle n;
-    // Robot pose object + subscriber.
-    RobotPose robotPose(0,0,0);
-    ros::Subscriber amclSub = n.subscribe("/amcl_pose", 1, &RobotPose::poseCallback, &robotPose);
-
-    // Initialize image object and subscriber.
-    ImagePipeline imagePipeline(n);
-
-    // Spin a couple times to sync properly
-    for (int i = 0; i < 3; i++) {
-        ros::Duration(0.1).sleep();
-        ros::spinOnce();
-    }
 
     // Initialize box coordinates and templates
     Boxes boxes; 
@@ -50,6 +35,21 @@ int main(int argc, char** argv) {
         }
     }
 
+    // Setup ROS.
+    ros::init(argc, argv, "contest2");
+    ros::NodeHandle n;
+    // Robot pose object + subscriber.
+    RobotPose robotPose(0,0,0);
+    ros::Subscriber amclSub = n.subscribe("/amcl_pose", 1, &RobotPose::poseCallback, &robotPose);
+    // Initialize image object and subscriber.
+    ImagePipeline imagePipeline(n, boxes);
+
+    // Spin a couple times to sync properly
+    for (int i = 0; i < 3; i++) {
+        ros::Duration(0.1).sleep();
+        ros::spinOnce();
+    }
+    
     // Record starting position
     std::vector<float> startPosition(3);
     startPosition[0] = robotPose.x;
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
     ROS_INFO("Starting position:\n\tx: %5.2f\ty: %5.2f\tyaw: %5.2f", startPosition[0], startPosition[1], startPosition[3]);
 
     pathPlanning pathPlanned(n, boxes, startPosition);
-
+    
     // Variable to record identification of boxes
     std::vector<int> boxIDs(boxes.coords.size()); // Recoding IDs of each box
     int currentStop = 0;
@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
 #endif
 #ifdef VISION_SAMPLES_TEST
         // Leave search term for vision as "" for all test cases
-        visionSystemTest("pup", boxes, imagePipeline, false);
+        visionSystemTest("", boxes, imagePipeline, true);
         return 0;
 #endif
 #ifdef MOTION_TEST
