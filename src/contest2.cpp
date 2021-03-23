@@ -80,20 +80,39 @@ int main(int argc, char** argv) {
 #endif
 #ifdef MOTION_TEST
         navigationSystemTest(pathPlanned);
-        return(0);
+        return 0;
 #endif
 
         // =======================================================
         // Actual loop code
-        // Use: boxes.coords
-        // Use: robotPose.x, robotPose.y, robotPose.phi
 
-        bool atSpotToScan = false;
+        // =======================================================
+        // Motion code
+        // Start by checking if it is time to return to start and terminate
+
+        if (currentStop == pathPlanned.idealOrder.size()) {
+            bool atEnd = pathPlanned.goToCoords(pathPlanned.startCoord);
+
+            // Check if it has successfully returned to the start
+            if (atEnd) ROS_WARN("\nREACHED END! (%.1f seconds)\n TERMINATING\n", secondsElapsed);
+            else ROS_ERROR("\nFAILED TO REACH END! (%.1f seconds)\n TERMINATING\n", secondsElapsed);
+            
+            break; // Break out of while loop (to terminate)
+        }
+
+        // Do normal motion otherwise
+        bool atSpotToScan = pathPlanned.goToStop(currentStop);
+        
+        if (atSpotToScan) ROS_INFO("Reached box %d", currentStop + 1);
+        else ROS_ERROR("Failed to reach box %d", currentStop + 1);
 
         // =======================================================
         // Vision code
+
+        ros::spinOnce(); // Update video feed after moving
+
         if (atSpotToScan) {
-            int ID = imagePipeline.getTemplateID(boxes, false); // Check if there is something present, do not print internals
+            int ID = imagePipeline.getTemplateID(boxes, true); // Check if there is something present, do not print internals
             // NOTE: DO NOT CALL IN RAPID SUCCESSION
             // TODO: See if this is related to period between calls or quantity of calls
             if (ID == -1) {
@@ -112,17 +131,8 @@ int main(int argc, char** argv) {
 
 
         // =======================================================
-        // Handle reaching a stop
-        if (atSpotToScan) {
-
-            currentStop++;
-
-            // Check if it has successfully returned to the start
-            if (currentStop == pathPlanned.idealOrder.size()) {
-                ROS_WARN("\nREACHED END! (%.1f seconds)\n RECORDING OUTPUT AND TERMINATING.\n", secondsElapsed);
-                break; // Break out of while loop
-            }
-        }
+        // Increment to next step
+        currentStop++;
 
         // Sleep and record elapsed time
         ros::Duration(0.1).sleep();
