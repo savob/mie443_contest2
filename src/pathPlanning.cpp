@@ -163,8 +163,9 @@ std::vector<int> pathPlanning::findOptimalPath(bool printResult) {
     ROS_INFO("Determining optimal path using brute force method.");
 
     // Create an adjacency matrix
-    int tour_points = stopCoords.size() + 1;
-    double adjMatrix[tour_points][tour_points];
+    int tour_points = stopCoords.size() + 1; // Number of points to take
+    double adjMatrix[tour_points][tour_points]; // Stores cost between any two spots
+    // Start is 0, 1 onwards are boxes 1 onwards
     
     for(int i = 0; i < tour_points; ++i) {
         for(int j = 0; j < tour_points; ++j) {
@@ -210,16 +211,22 @@ std::vector<int> pathPlanning::findOptimalPath(bool printResult) {
         }
     }
 
+    // Edit route to be better fed into navigation
+    for (int i = 1; i <= tour_points; i++) {
+        bestRoute[i] = bestRoute[i] - 1;    // Fix box indexing to start from 0 and not 1
+        bestRoute[i-1] = bestRoute[i];      // Move all points up one (removing the start point from the list)
+    }
+    bestRoute.pop_back(); // Remove the redundant end point
+
     ROS_INFO("Best path determined for %d given boxes. Estimated travel: %.2f m.",(int) bestRoute.size(), bestScore);
 
     if(printResult) {
-        char buffer[50];
         for (int i = 0; i < bestRoute.size(); i++) { 
-            //sprintf(buffer, "Stop %2d - Box %2d\t(%5.2f, %5.2f)\n", i + 1, 
-            //    bestRoute[i], stopCoords[bestRoute[i]][0], stopCoords[bestRoute[i]][1]);
-            
-            //std::cout << buffer;
-            std::cout << "Stop " << i+1 << " - Box " << bestRoute[i] << std::endl;
+            char buffer[60];
+
+            sprintf(buffer, "\tStop %2d - Box %2d\t(%5.2f, %5.2f, %6.3f)\n", i + 1, bestRoute[i],
+                stopCoords[bestRoute[i]][0], stopCoords[bestRoute[i]][1], stopCoords[bestRoute[i]][2]);
+            std::cout << buffer;
         }
     }
     
