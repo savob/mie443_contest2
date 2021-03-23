@@ -32,10 +32,10 @@ bool pathPlanning::goToCoords(std::vector<float> target) {
 pathPlanning::pathPlanning(ros::NodeHandle& n, Boxes boxesIn, std::vector<float> startPosition, bool printStuff) {
     nh = n;
     startCoord = startPosition;
+    boxCoordList = boxesIn.coords;
 
-    //Initialize lists
-    for (int i = 0; i < boxesIn.coords.size(); i++) {
-        boxCoordList.push_back(boxesIn.coords[i]);
+    //Initialize list
+    for (int i = 0; i < boxCoordList.size(); i++) {
         stopCoords.push_back(faceBoxPoint(i));
     }
 
@@ -210,17 +210,16 @@ std::vector<int> pathPlanning::findOptimalPath(bool printResult) {
         }
     }
 
-    ROS_INFO("Best path determined for given boxes. Estimated travel: %.2f m.", bestScore);
+    ROS_INFO("Best path determined for %d given boxes. Estimated travel: %.2f m.",(int) bestRoute.size(), bestScore);
 
-    ROS_INFO("WE HERE. %s - %d",__FILE__ , __LINE__ );
-    
     if(printResult) {
-        for (int i = 0; i< bestRoute.size() - 1; i++) {
-            char buffer[80];
-            sprintf(buffer, "Stop %2d - Box %2d\t(%5.2f, %5.2f)\n", i + 1, 
-                bestRoute[i], stopCoords[bestRoute[i]][0], stopCoords[bestRoute[i]][1]);
+        char buffer[50];
+        for (int i = 0; i < bestRoute.size(); i++) { 
+            //sprintf(buffer, "Stop %2d - Box %2d\t(%5.2f, %5.2f)\n", i + 1, 
+            //    bestRoute[i], stopCoords[bestRoute[i]][0], stopCoords[bestRoute[i]][1]);
             
-            std::cout << buffer;
+            //std::cout << buffer;
+            std::cout << "Stop " << i+1 << " - Box " << bestRoute[i] << std::endl;
         }
     }
     
