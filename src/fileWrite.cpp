@@ -57,7 +57,7 @@ void writeLog(Boxes boxList, std::vector<int> movePlan, std::vector<int> boxIDs,
 
         outputFile.close(); // Must close file once complete
 
-        ROS_INFO("\n\nFile with results written to:\n%s\n", fileLocation.c_str());
+        ROS_INFO_COND(printInfo, "\n\nFile with results written to:\n%s\n", fileLocation.c_str());
     }
     else {
         // File failed to open
