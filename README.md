@@ -1,6 +1,7 @@
 # MIE443 Contest 2 Code
-Group 22
-Savo Bajic - 1003051485 
+
+Group 22:
+Savo Bajic - 1003051485
 Maximilian Glidden - 1002277396
 Catherine Kucaba - 1003278026
 
@@ -10,8 +11,11 @@ NOTE: Each one of these lines need to be executed in seperate terminal windows, 
 NOTE: the file path at the end of the third command "roslaunch turtlebot_..." needs to be adjusted for the testing computer so it points to the right map file for the contest.
 
 clear; cd ~/catkin_ws/; catkin_make
+
 roslaunch mie443_contest2 turtlebot_world.launch world:=practice
+
 roslaunch turtlebot_navigation amcl_demo.launch map_file:=/home/brobot/catkin_ws/src/mie443_contest2/maps/map_practice.yaml
+
 rosrun mie443_contest2 contest2
 
 If a visualization of the state of the robot's localization is desired during the run, execute the following command in a seperate terminal either right before "rosrun mie443_contest2 contest2" or after it.
